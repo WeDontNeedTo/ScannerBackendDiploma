@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: Diploma Backend Users API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /users/{userID}:
+    get:
+      summary: Get current user profile by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserID"
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Invalid userID
+        "401":
+          description: Unauthorize
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: UUID
+  parameters:
+    UserID:
+      name: userID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    UserPublic:
+      type: object
+      required:
+        - id
+        - login
+        - fullName
+        - age
+        - position
+      properties:
+        id:
+          type: string
+          format: uuid
+        login:
+          type: string
+        fullName:
+          type: string
+        age:
+          type: integer
+        position:
+          type: string

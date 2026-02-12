@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Diploma Backend Auth API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user and issue a token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Login already in use
+  /auth/login:
+    post:
+      summary: Login user and issue a token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: User authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+  /auth/logout:
+    post:
+      summary: Logout current user and revoke token
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Logged out
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: UUID
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - login
+        - password
+        - fullName
+        - age
+        - position
+      properties:
+        login:
+          type: string
+          example: "user1"
+        password:
+          type: string
+          format: password
+          example: "secret"
+        fullName:
+          type: string
+          example: "Alex Smith"
+        age:
+          type: integer
+          example: 28
+        position:
+          type: string
+          example: "Warehouse Manager"
+    LoginRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          example: "user1"
+        password:
+          type: string
+          format: password
+          example: "secret"
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+      properties:
+        user:
+          $ref: "#/components/schemas/UserPublic"
+        token:
+          type: string
+          example: "2F3F9E7E-8F0B-4A6A-9BC1-6D4B2BFAAA11"
+    UserPublic:
+      type: object
+      required:
+        - id
+        - login
+        - fullName
+        - age
+        - position
+      properties:
+        id:
+          type: string
+          format: uuid
+        login:
+          type: string
+        fullName:
+          type: string
+        age:
+          type: integer
+        position:
+          type: string

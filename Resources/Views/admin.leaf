@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Audit Logs</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; color: #1f2937; }
+    h1 { margin: 0 0 8px; }
+    .meta { margin-bottom: 16px; color: #4b5563; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px; vertical-align: top; text-align: left; }
+    th { background: #f9fafb; }
+    .pager { margin-top: 16px; display: flex; gap: 12px; align-items: center; }
+    .disabled { color: #9ca3af; }
+    code { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <h1>Audit Logs</h1>
+  <div class="meta">Total: #(total) | Page #(page) of #(totalPages) | Per page: #(per)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Created At</th>
+        <th>Action</th>
+        <th>Entity</th>
+        <th>Entity ID</th>
+        <th>Message</th>
+        <th>Metadata</th>
+      </tr>
+    </thead>
+    <tbody>
+      #if(hasLogs):
+        #for(log in logs):
+          <tr>
+            <td>#(log.createdAt)</td>
+            <td>#(log.action)</td>
+            <td>#(log.entity)</td>
+            <td>#(log.entityID)</td>
+            <td>#(log.message)</td>
+            <td><code>#(log.metadata)</code></td>
+          </tr>
+        #endfor
+      #else:
+        <tr><td colspan="6">No logs found.</td></tr>
+      #endif
+    </tbody>
+  </table>
+  <div class="pager">
+    #if(hasPrev):
+      <a href="#(prevUrl)">Previous</a>
+    #else:
+      <span class="disabled">Previous</span>
+    #endif
+    #if(hasNext):
+      <a href="#(nextUrl)">Next</a>
+    #else:
+      <span class="disabled">Next</span>
+    #endif
+  </div>
+</body>
+</html>

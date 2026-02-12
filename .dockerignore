@@ -1,0 +1,6 @@
+.build
+.swiftpm
+.git
+.gitignore
+README.md
+.DS_Store

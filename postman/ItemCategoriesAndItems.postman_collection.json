@@ -1,0 +1,554 @@
+{
+  "info": {
+    "name": "Inventory API - Categories & Items",
+    "_postman_id": "bf921fca-5791-4abc-a0a0-69627b3ca4c1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Category - Laptops",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"laptops\",\n  \"description\": \"Portable computers\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/item-categories",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "item-categories"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"categoryId_laptops\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Category - Keyboards",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"keyboards\",\n  \"description\": \"Input peripherals\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/item-categories",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "item-categories"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"categoryId_keyboards\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Category - Routers",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"routers\",\n  \"description\": \"Networking equipment\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/item-categories",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "item-categories"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"categoryId_routers\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Item - MacBook Air 13",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"number\": \"LPT-001\",\n  \"name\": \"MacBook Air 13\",\n  \"description\": \"M2, 8GB RAM, 256GB SSD\",\n  \"categoryID\": \"{{categoryId_laptops}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"itemId_1\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Item - Dell XPS 13",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"number\": \"LPT-002\",\n  \"name\": \"Dell XPS 13\",\n  \"description\": \"i7, 16GB RAM, 512GB SSD\",\n  \"categoryID\": \"{{categoryId_laptops}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"itemId_2\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Item - Logitech MX Keys",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"number\": \"KBD-001\",\n  \"name\": \"Logitech MX Keys\",\n  \"description\": \"Wireless, backlit\",\n  \"categoryID\": \"{{categoryId_keyboards}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"itemId_3\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Item - Keychron K2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"number\": \"KBD-002\",\n  \"name\": \"Keychron K2\",\n  \"description\": \"Mechanical, hot-swappable\",\n  \"categoryID\": \"{{categoryId_keyboards}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"itemId_4\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Item - TP-Link AX55",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"number\": \"RTR-001\",\n  \"name\": \"TP-Link AX55\",\n  \"description\": \"Wi-Fi 6 router\",\n  \"categoryID\": \"{{categoryId_routers}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set(\"itemId_5\", pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Set Item Location - MacBook Air 13",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"locationID\": \"{{locationId_1}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId_1}}/location",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items",
+            "{{itemId_1}}",
+            "location"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Set Item Location - Dell XPS 13",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"locationID\": \"{{locationId_2}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId_2}}/location",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items",
+            "{{itemId_2}}",
+            "location"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Set Item Location - Logitech MX Keys",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"locationID\": \"{{locationId_1}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId_3}}/location",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items",
+            "{{itemId_3}}",
+            "location"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Set Item Location - Keychron K2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"locationID\": \"{{locationId_3}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId_4}}/location",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items",
+            "{{itemId_4}}",
+            "location"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Set Item Location - TP-Link AX55",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"locationID\": \"{{locationId_2}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId_5}}/location",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "items",
+            "{{itemId_5}}",
+            "location"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": "EC6DB2F3-808B-4A1B-ACB7-E0C26B58284A"
+    },
+    {
+      "key": "categoryId_laptops",
+      "value": ""
+    },
+    {
+      "key": "categoryId_keyboards",
+      "value": ""
+    },
+    {
+      "key": "categoryId_routers",
+      "value": ""
+    },
+    {
+      "key": "itemId_1",
+      "value": ""
+    },
+    {
+      "key": "itemId_2",
+      "value": ""
+    },
+    {
+      "key": "itemId_3",
+      "value": ""
+    },
+    {
+      "key": "itemId_4",
+      "value": ""
+    },
+    {
+      "key": "itemId_5",
+      "value": ""
+    },
+    {
+      "key": "locationId_1",
+      "value": ""
+    },
+    {
+      "key": "locationId_2",
+      "value": ""
+    },
+    {
+      "key": "locationId_3",
+      "value": ""
+    }
+  ]
+}

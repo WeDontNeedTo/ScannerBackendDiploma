@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:15
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  api:
+    build: .
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+  migrate:
+    build: .
+    depends_on:
+      - db
+    env_file:
+      - .env
+    command: ["./Run", "migrate"]
+
+volumes:
+  db-data:
