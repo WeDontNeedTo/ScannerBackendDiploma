@@ -24,7 +24,8 @@ struct AuthController: RouteCollection {
             passwordHash: passwordHash,
             fullName: payload.fullName,
             age: payload.age,
-            position: payload.position
+            position: payload.position,
+            role: .employee
         )
         try await user.save(on: req.db)
         let token = try await issueToken(for: user, on: req.db)

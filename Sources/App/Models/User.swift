@@ -1,6 +1,38 @@
 import Fluent
 import Vapor
 
+enum UserRole: String, Codable, Content {
+    case employee
+    case materiallyResponsiblePerson = "materially_responsible_person"
+    case accountant
+    case admin
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self).trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch rawValue {
+        case "employee":
+            self = .employee
+        case "materially_responsible_person", "materially responsible person", "mrp":
+            self = .materiallyResponsiblePerson
+        case "accountant":
+            self = .accountant
+        case "admin":
+            self = .admin
+        default:
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported role value."
+            )
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+}
+
 final class User: Model, Content {
     static let schema = "users"
 
@@ -22,6 +54,9 @@ final class User: Model, Content {
     @Field(key: "position")
     var position: String
 
+    @Field(key: "role")
+    var role: UserRole
+
     @OptionalChild(for: \.$user)
     var token: UserToken?
 
@@ -36,7 +71,8 @@ final class User: Model, Content {
         passwordHash: String,
         fullName: String,
         age: Int,
-        position: String
+        position: String,
+        role: UserRole = .employee
     ) {
         self.id = id
         self.login = login
@@ -44,6 +80,7 @@ final class User: Model, Content {
         self.fullName = fullName
         self.age = age
         self.position = position
+        self.role = role
     }
 }
 
@@ -62,6 +99,7 @@ struct UserPublicResponse: Content {
     let fullName: String
     let age: Int
     let position: String
+    let role: UserRole
 }
 
 extension User {
@@ -71,8 +109,33 @@ extension User {
             login: login,
             fullName: fullName,
             age: age,
-            position: position
+            position: position,
+            role: role
         )
+    }
+
+    var canManageInventory: Bool {
+        role == .materiallyResponsiblePerson || role == .accountant || role == .admin
+    }
+
+    var canBypassRequestFlow: Bool {
+        role == .accountant || role == .admin
+    }
+
+    var canApproveGrabRequests: Bool {
+        canManageInventory
+    }
+
+    func requireInventoryManagerRole() throws {
+        guard canManageInventory else {
+            throw Abort(.forbidden, reason: "This action requires materially responsible person, accountant, or admin role.")
+        }
+    }
+
+    func requireAdminRole() throws {
+        guard role == .admin else {
+            throw Abort(.forbidden, reason: "This action requires admin role.")
+        }
     }
 }
 
@@ -91,5 +154,19 @@ struct CreateUser: Migration {
 
     func revert(on database: Database) -> EventLoopFuture<Void> {
         database.schema(User.schema).delete()
+    }
+}
+
+struct AddUserRoleField: Migration {
+    func prepare(on database: Database) -> EventLoopFuture<Void> {
+        database.schema(User.schema)
+            .field("role", .string, .required, .sql(.default("'employee'")))
+            .update()
+    }
+
+    func revert(on database: Database) -> EventLoopFuture<Void> {
+        database.schema(User.schema)
+            .deleteField("role")
+            .update()
     }
 }
