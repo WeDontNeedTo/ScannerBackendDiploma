@@ -1,0 +1,9 @@
+import Fluent
+import Foundation
+
+protocol UserRepository {
+    func find(id: UUID, on db: Database) async throws -> User?
+    func findByLogin(_ login: String, on db: Database) async throws -> User?
+    func listMateriallyResponsible(on db: Database) async throws -> [User]
+    func save(_ user: User, on db: Database) async throws
+}

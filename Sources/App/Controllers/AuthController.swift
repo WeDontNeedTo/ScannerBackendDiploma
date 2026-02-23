@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 struct AuthController: RouteCollection {
@@ -11,58 +10,41 @@ struct AuthController: RouteCollection {
     }
 
     func register(req: Request) async throws -> AuthResponse {
-        let payload = try req.content.decode(RegisterRequest.self)
-        let existing = try await User.query(on: req.db)
-            .filter(\.$login == payload.login)
-            .first()
-        guard existing == nil else {
-            throw Abort(.conflict, reason: "Login is already in use.")
+        do {
+            let payload = try req.content.decode(RegisterRequest.self)
+            return try await req.application.services.authService.register(
+                payload: payload,
+                context: context(req)
+            )
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        let passwordHash = try Bcrypt.hash(payload.password)
-        let user = User(
-            login: payload.login,
-            passwordHash: passwordHash,
-            fullName: payload.fullName,
-            age: payload.age,
-            position: payload.position,
-            role: .employee
-        )
-        try await user.save(on: req.db)
-        let token = try await issueToken(for: user, on: req.db)
-        return AuthResponse(user: user.asPublic(), token: token.value)
     }
 
     func login(req: Request) async throws -> AuthResponse {
-        let payload = try req.content.decode(LoginRequest.self)
-         guard let user = try await User.query(on: req.db)
-             .filter(\.$login == payload.login)
-             .first() else {
-             throw Abort(.unauthorized, reason: "Invalid credentials.")
-         }
-         guard try user.verify(password: payload.password) else {
-             throw Abort(.unauthorized, reason: "Invalid credentials.")
-         }
-         let token = try await issueToken(for: user, on: req.db)
-        return AuthResponse(user: user.asPublic(), token: token.value)
+        do {
+            let payload = try req.content.decode(LoginRequest.self)
+            return try await req.application.services.authService.login(
+                payload: payload,
+                context: context(req)
+            )
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
     }
 
     func logout(req: Request) async throws -> HTTPStatus {
-        let user = try req.auth.require(User.self)
-        try await UserToken.query(on: req.db)
-            .filter(\.$user.$id == user.requireID())
-            .delete()
-        try await req.audit(action: "logout", entity: "users", entityID: user.id)
-        return .noContent
+        do {
+            let userID = try await req.application.services.authService.logout(context: context(req))
+            try await req.audit(action: "logout", entity: "users", entityID: userID)
+            return .noContent
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
     }
 
-    private func issueToken(for user: User, on db: Database) async throws -> UserToken {
-        try await UserToken.query(on: db)
-            .filter(\.$user.$id == user.requireID())
-            .delete()
-        let tokenValue = UUID().uuidString
-        let token = UserToken(value: tokenValue, userID: try user.requireID())
-        try await token.save(on: db)
-        return token
+    private func context(_ req: Request) -> ServiceContext {
+        ServiceContext(db: req.db, currentUser: req.auth.get(User.self))
     }
 }
 

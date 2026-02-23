@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 struct LocationController: RouteCollection {
@@ -14,72 +13,75 @@ struct LocationController: RouteCollection {
     }
 
     func index(req: Request) async throws -> [Location] {
-        let locations = try await Location.query(on: req.db).all()
-        try await req.audit(action: "read", entity: "locations", message: "list")
-        return locations
+        do {
+            let locations = try await req.application.services.locationService.index(context: context(req))
+            try await req.audit(action: "read", entity: "locations", message: "list")
+            return locations
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
     }
 
     func create(req: Request) async throws -> Location {
-        let payload = try req.content.decode(CreateLocationRequest.self)
-        let location = Location(
-            name: payload.name,
-            kind: payload.kind,
-            address: payload.address,
-            shelf: payload.shelf,
-            row: payload.row,
-            section: payload.section
-        )
-        try await location.save(on: req.db)
-        try await req.audit(action: "create", entity: "locations", entityID: location.id)
-        return location
+        do {
+            let payload = try req.content.decode(CreateLocationRequest.self)
+            let location = try await req.application.services.locationService.create(
+                payload: payload,
+                context: context(req)
+            )
+            try await req.audit(action: "create", entity: "locations", entityID: location.id)
+            return location
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
     }
 
     func show(req: Request) async throws -> Location {
-        let locationID = try req.requireUUID("locationID")
-        guard let location = try await Location.find(locationID, on: req.db) else {
-            throw Abort(.notFound)
+        do {
+            let locationID = try req.requireUUID("locationID")
+            let location = try await req.application.services.locationService.show(
+                locationID: locationID,
+                context: context(req)
+            )
+            try await req.audit(action: "read", entity: "locations", entityID: location.id)
+            return location
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        try await req.audit(action: "read", entity: "locations", entityID: location.id)
-        return location
     }
 
     func update(req: Request) async throws -> Location {
-        let payload = try req.content.decode(UpdateLocationRequest.self)
-        let locationID = try req.requireUUID("locationID")
-        guard let location = try await Location.find(locationID, on: req.db) else {
-            throw Abort(.notFound)
+        do {
+            let payload = try req.content.decode(UpdateLocationRequest.self)
+            let locationID = try req.requireUUID("locationID")
+            let location = try await req.application.services.locationService.update(
+                locationID: locationID,
+                payload: payload,
+                context: context(req)
+            )
+            try await req.audit(action: "update", entity: "locations", entityID: location.id)
+            return location
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        if let name = payload.name {
-            location.name = name
-        }
-        if let kind = payload.kind {
-            location.kind = kind
-        }
-        if payload.address != nil {
-            location.address = payload.address
-        }
-        if payload.shelf != nil {
-            location.shelf = payload.shelf
-        }
-        if payload.row != nil {
-            location.row = payload.row
-        }
-        if payload.section != nil {
-            location.section = payload.section
-        }
-        try await location.save(on: req.db)
-        try await req.audit(action: "update", entity: "locations", entityID: location.id)
-        return location
     }
 
     func delete(req: Request) async throws -> HTTPStatus {
-        let locationID = try req.requireUUID("locationID")
-        guard let location = try await Location.find(locationID, on: req.db) else {
-            throw Abort(.notFound)
+        do {
+            let locationID = try req.requireUUID("locationID")
+            try await req.application.services.locationService.delete(
+                locationID: locationID,
+                context: context(req)
+            )
+            try await req.audit(action: "delete", entity: "locations", entityID: locationID)
+            return .noContent
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        try await location.delete(on: req.db)
-        try await req.audit(action: "delete", entity: "locations", entityID: locationID)
-        return .noContent
+    }
+
+    private func context(_ req: Request) -> ServiceContext {
+        ServiceContext(db: req.db, currentUser: req.auth.get(User.self))
     }
 }
 

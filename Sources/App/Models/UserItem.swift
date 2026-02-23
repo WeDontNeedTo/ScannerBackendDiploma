@@ -5,6 +5,34 @@ enum UserItemStatus: String, Codable, Content {
     case requested
     case transferRequested = "transfer_requested"
     case approved
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+            .trimmingCharacters(
+                in: CharacterSet(charactersIn: "'\"")
+                    .union(.whitespacesAndNewlines)
+            )
+            .lowercased()
+        switch rawValue {
+        case "requested":
+            self = .requested
+        case "transfer_requested", "transfer requested":
+            self = .transferRequested
+        case "approved":
+            self = .approved
+        default:
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported user item status value."
+            )
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 final class UserItem: Model, Content {
@@ -47,89 +75,5 @@ final class UserItem: Model, Content {
         self.status = status
         self.approvedByUserID = approvedByUserID
         self.requestedToUserID = requestedToUserID
-    }
-}
-
-struct CreateUserItem: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .id()
-            .field(
-                "user_id",
-                .uuid,
-                .required,
-                .references(User.schema, "id", onDelete: .cascade)
-            )
-            .field(
-                "item_id",
-                .uuid,
-                .required,
-                .references(Item.schema, "id", onDelete: .restrict)
-            )
-            .field("grabbed_at", .datetime)
-            .unique(on: "item_id")
-            .create()
-    }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema).delete()
-    }
-}
-
-struct RemoveUserItemQuantity: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .deleteField("quantity")
-            .update()
-    }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .field("quantity", .int, .required)
-            .update()
-    }
-}
-
-struct AddUserItemRequestWorkflow: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .field("status", .string, .required, .sql(.default("'approved'")))
-            .field(
-                "approved_by_user_id",
-                .uuid,
-                .references(User.schema, "id", onDelete: .setNull)
-            )
-            .field(
-                "requested_to_user_id",
-                .uuid,
-                .references(User.schema, "id", onDelete: .setNull)
-            )
-            .update()
-    }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .deleteField("requested_to_user_id")
-            .deleteField("approved_by_user_id")
-            .deleteField("status")
-            .update()
-    }
-}
-
-struct AddUserItemRequestedToUserField: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .field(
-                "requested_to_user_id",
-                .uuid,
-                .references(User.schema, "id", onDelete: .setNull)
-            )
-            .update()
-    }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(UserItem.schema)
-            .deleteField("requested_to_user_id")
-            .update()
     }
 }

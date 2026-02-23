@@ -23,6 +23,35 @@ public func configure(_ app: Application) throws {
         )
     }
 
+    app.repositories = RepositoryContainer(
+        itemRepository: FluentItemRepository(),
+        userRepository: FluentUserRepository(),
+        userItemRepository: FluentUserItemRepository(),
+        itemLocationRepository: FluentItemLocationRepository(),
+        itemJournalRepository: FluentItemJournalRepository(),
+        brokenItemRepository: FluentBrokenItemRepository(),
+        itemCategoryRepository: FluentItemCategoryRepository(),
+        locationRepository: FluentLocationRepository(),
+        itemParameterRepository: FluentItemParameterRepository(),
+        userTokenRepository: FluentUserTokenRepository()
+    )
+
+    let itemJournalService = DefaultItemJournalService(repositories: app.repositories)
+    app.services = ServiceContainer(
+        dashboardService: DefaultDashboardService(repositories: app.repositories),
+        itemService: DefaultItemService(repositories: app.repositories, itemJournalService: itemJournalService),
+        itemJournalService: itemJournalService,
+        userItemService: DefaultUserItemService(
+            repositories: app.repositories,
+            itemJournalService: itemJournalService
+        ),
+        authService: DefaultAuthService(repositories: app.repositories),
+        userService: DefaultUserService(repositories: app.repositories),
+        locationService: DefaultLocationService(repositories: app.repositories),
+        itemCategoryService: DefaultItemCategoryService(repositories: app.repositories),
+        itemParameterService: DefaultItemParameterService(repositories: app.repositories)
+    )
+
     app.migrations.add(CreateItem())
     app.migrations.add(AddItemPriceRub())
     app.migrations.add(ConvertItemPriceRubToNumeric())
@@ -48,6 +77,7 @@ public func configure(_ app: Application) throws {
     app.migrations.add(RemoveItemLocationQuantity())
     app.migrations.add(CreateBrokenItem())
     app.migrations.add(CreateAuditLog())
+    app.migrations.add(CreateItemJournalEvent())
     app.views.use(.leaf)
 
     try routes(app)

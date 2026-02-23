@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 struct ItemCategoryController: RouteCollection {
@@ -14,53 +13,75 @@ struct ItemCategoryController: RouteCollection {
     }
 
     func index(req: Request) async throws -> [ItemCategory] {
-        let categories = try await ItemCategory.query(on: req.db).all()
-        try await req.audit(action: "read", entity: "item_categories", message: "list")
-        return categories
+        do {
+            let categories = try await req.application.services.itemCategoryService.index(context: context(req))
+            try await req.audit(action: "read", entity: "item_categories", message: "list")
+            return categories
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
     }
 
     func create(req: Request) async throws -> ItemCategory {
-        let payload = try req.content.decode(CreateItemCategoryRequest.self)
-        let category = ItemCategory(name: payload.name, description: payload.description)
-        try await category.save(on: req.db)
-        try await req.audit(action: "create", entity: "item_categories", entityID: category.id)
-        return category
+        do {
+            let payload = try req.content.decode(CreateItemCategoryRequest.self)
+            let category = try await req.application.services.itemCategoryService.create(
+                payload: payload,
+                context: context(req)
+            )
+            try await req.audit(action: "create", entity: "item_categories", entityID: category.id)
+            return category
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
     }
 
     func show(req: Request) async throws -> ItemCategory {
-        let categoryID = try req.requireUUID("categoryID")
-        guard let category = try await ItemCategory.find(categoryID, on: req.db) else {
-            throw Abort(.notFound)
+        do {
+            let categoryID = try req.requireUUID("categoryID")
+            let category = try await req.application.services.itemCategoryService.show(
+                categoryID: categoryID,
+                context: context(req)
+            )
+            try await req.audit(action: "read", entity: "item_categories", entityID: category.id)
+            return category
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        try await req.audit(action: "read", entity: "item_categories", entityID: category.id)
-        return category
     }
 
     func update(req: Request) async throws -> ItemCategory {
-        let payload = try req.content.decode(UpdateItemCategoryRequest.self)
-        let categoryID = try req.requireUUID("categoryID")
-        guard let category = try await ItemCategory.find(categoryID, on: req.db) else {
-            throw Abort(.notFound)
+        do {
+            let payload = try req.content.decode(UpdateItemCategoryRequest.self)
+            let categoryID = try req.requireUUID("categoryID")
+            let category = try await req.application.services.itemCategoryService.update(
+                categoryID: categoryID,
+                payload: payload,
+                context: context(req)
+            )
+            try await req.audit(action: "update", entity: "item_categories", entityID: category.id)
+            return category
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        if let name = payload.name {
-            category.name = name
-        }
-        if payload.description != nil {
-            category.description = payload.description
-        }
-        try await category.save(on: req.db)
-        try await req.audit(action: "update", entity: "item_categories", entityID: category.id)
-        return category
     }
 
     func delete(req: Request) async throws -> HTTPStatus {
-        let categoryID = try req.requireUUID("categoryID")
-        guard let category = try await ItemCategory.find(categoryID, on: req.db) else {
-            throw Abort(.notFound)
+        do {
+            let categoryID = try req.requireUUID("categoryID")
+            try await req.application.services.itemCategoryService.delete(
+                categoryID: categoryID,
+                context: context(req)
+            )
+            try await req.audit(action: "delete", entity: "item_categories", entityID: categoryID)
+            return .noContent
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        try await category.delete(on: req.db)
-        try await req.audit(action: "delete", entity: "item_categories", entityID: categoryID)
-        return .noContent
+    }
+
+    private func context(_ req: Request) -> ServiceContext {
+        ServiceContext(db: req.db, currentUser: req.auth.get(User.self))
     }
 }
 

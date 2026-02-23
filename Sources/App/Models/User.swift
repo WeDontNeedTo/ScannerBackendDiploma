@@ -9,7 +9,12 @@ enum UserRole: String, Codable, Content {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self).trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let rawValue = try container.decode(String.self)
+            .trimmingCharacters(
+                in: CharacterSet(charactersIn: "'\"")
+                    .union(.whitespacesAndNewlines)
+            )
+            .lowercased()
         switch rawValue {
         case "employee":
             self = .employee
@@ -128,7 +133,10 @@ extension User {
 
     func requireInventoryManagerRole() throws {
         guard canManageInventory else {
-            throw Abort(.forbidden, reason: "This action requires materially responsible person, accountant, or admin role.")
+            throw Abort(
+                .forbidden,
+                reason: "This action requires materially responsible person, accountant, or admin role."
+            )
         }
     }
 
@@ -136,37 +144,5 @@ extension User {
         guard role == .admin else {
             throw Abort(.forbidden, reason: "This action requires admin role.")
         }
-    }
-}
-
-struct CreateUser: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(User.schema)
-            .id()
-            .field("login", .string, .required)
-            .field("password_hash", .string, .required)
-            .field("full_name", .string, .required)
-            .field("age", .int, .required)
-            .field("position", .string, .required)
-            .unique(on: "login")
-            .create()
-    }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(User.schema).delete()
-    }
-}
-
-struct AddUserRoleField: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(User.schema)
-            .field("role", .string, .required, .sql(.default("'employee'")))
-            .update()
-    }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(User.schema)
-            .deleteField("role")
-            .update()
     }
 }

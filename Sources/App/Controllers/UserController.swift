@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 struct UserController: RouteCollection {
@@ -9,32 +8,42 @@ struct UserController: RouteCollection {
     }
 
     func showCurrent(req: Request) async throws -> UserPublicResponse {
-        let user = try req.auth.require(User.self)
-        let userID = try req.requireUUID("userID")
-        guard try user.requireID() == userID else {
-            throw Abort(.forbidden, reason: "You can only access your own user profile.")
+        do {
+            let userID = try req.requireUUID("userID")
+            let response = try await req.application.services.userService.showCurrent(
+                requestedUserID: userID,
+                context: context(req)
+            )
+            try await req.audit(action: "read", entity: "users", entityID: userID)
+            return response
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        try await req.audit(action: "read", entity: "users", entityID: userID)
-        return user.asPublic()
     }
 
     func updateRole(req: Request) async throws -> UserPublicResponse {
-        let actor = try req.auth.require(User.self)
-        try actor.requireAdminRole()
-        let userID = try req.requireUUID("userID")
-        let payload = try req.content.decode(UpdateUserRoleRequest.self)
-        guard let user = try await User.find(userID, on: req.db) else {
-            throw Abort(.notFound, reason: "User not found.")
+        do {
+            let userID = try req.requireUUID("userID")
+            let payload = try req.content.decode(UpdateUserRoleRequest.self)
+            let response = try await req.application.services.userService.updateRole(
+                userID: userID,
+                role: payload.role,
+                context: context(req)
+            )
+            try await req.audit(
+                action: "update",
+                entity: "users",
+                entityID: userID,
+                message: "role=\(payload.role.rawValue)"
+            )
+            return response
+        } catch let error as DomainError {
+            throw error.asAbort()
         }
-        user.role = payload.role
-        try await user.save(on: req.db)
-        try await req.audit(
-            action: "update",
-            entity: "users",
-            entityID: userID,
-            message: "role=\(payload.role.rawValue)"
-        )
-        return user.asPublic()
+    }
+
+    private func context(_ req: Request) -> ServiceContext {
+        ServiceContext(db: req.db, currentUser: req.auth.get(User.self))
     }
 }
 

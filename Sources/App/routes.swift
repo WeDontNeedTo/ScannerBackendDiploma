@@ -8,11 +8,13 @@ func routes(_ app: Application) throws {
 
     try app.register(collection: AdminController())
     try app.register(collection: AuthController())
+    try app.register(collection: SwaggerController())
 
     let tokenProtected = app.grouped(
         UserToken.authenticator(),
         User.guardMiddleware()
     )
+    try tokenProtected.register(collection: DashboardController())
     try tokenProtected.register(collection: ItemController())
     try tokenProtected.register(collection: ItemCategoryController())
     try tokenProtected.register(collection: ItemParameterController())
