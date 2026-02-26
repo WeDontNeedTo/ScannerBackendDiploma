@@ -27,7 +27,7 @@ struct DefaultUserItemService: UserItemService {
     func incoming(context: ServiceContext) async throws -> [UserItem] {
         let user = try requireCurrentUser(context)
         guard user.canManageInventory else {
-            throw DomainError.forbidden("This action requires materially responsible person, accountant, or admin role.")
+            return []
         }
         return try await userItemRepository.listIncoming(for: try user.requireID(), on: context.db)
     }
@@ -51,20 +51,26 @@ struct DefaultUserItemService: UserItemService {
             throw DomainError.conflict("Item is already grabbed by another user.")
         }
 
-        let requestedToUserID = try await resolveRequestedToUserID(
-            requestedToUserID: data.requestedToUserID,
-            fallbackResponsibleUserID: itemModel.$responsibleUser.id,
-            requester: user,
-            db: context.db
-        )
+        let canApproveDirectly = user.canBypassRequestFlow || itemModel.$responsibleUser.id == userID
+        let requestedToUserID: UUID?
+        if canApproveDirectly {
+            requestedToUserID = nil
+        } else {
+            requestedToUserID = try await resolveRequestedToUserID(
+                requestedToUserID: data.requestedToUserID,
+                fallbackResponsibleUserID: itemModel.$responsibleUser.id,
+                requester: user,
+                db: context.db
+            )
+        }
 
-        let status: UserItemStatus = user.canBypassRequestFlow ? .approved : .requested
+        let status: UserItemStatus = canApproveDirectly ? .approved : .requested
         let userItem = UserItem(
             userID: userID,
             itemID: data.itemID,
             status: status,
-            approvedByUserID: user.canBypassRequestFlow ? userID : nil,
-            requestedToUserID: user.canBypassRequestFlow ? nil : requestedToUserID
+            approvedByUserID: canApproveDirectly ? userID : nil,
+            requestedToUserID: requestedToUserID
         )
 
         if status == .approved {

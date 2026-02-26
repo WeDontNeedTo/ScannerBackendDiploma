@@ -5,6 +5,9 @@ struct RepositoryContainer {
     let userRepository: any UserRepository
     let userItemRepository: any UserItemRepository
     let itemLocationRepository: any ItemLocationRepository
+    let itemLocationRequestRepository: any ItemLocationRequestRepository
+    let inventoryRequestRepository: any InventoryRequestRepository
+    let inventoryRequestItemRepository: any InventoryRequestItemRepository
     let itemJournalRepository: any ItemJournalRepository
     let brokenItemRepository: any BrokenItemRepository
     let itemCategoryRepository: any ItemCategoryRepository
@@ -16,6 +19,9 @@ struct RepositoryContainer {
 struct ServiceContainer {
     let dashboardService: any DashboardService
     let itemService: any ItemService
+    let itemLocationRequestService: any ItemLocationRequestService
+    let inventoryRequestService: any InventoryRequestService
+    let settingsUserService: any SettingsUserService
     let itemJournalService: any ItemJournalService
     let userItemService: any UserItemService
     let authService: any AuthService

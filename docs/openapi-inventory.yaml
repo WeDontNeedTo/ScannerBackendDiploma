@@ -233,9 +233,286 @@ paths:
         "401":
           description: Unauthorized
         "403":
-          description: Forbidden (role required)
+          description: Forbidden (direct change allowed only for current responsible user, accountant, or admin)
         "404":
           description: Item, location, or responsible user not found
+
+  /items/{itemID}/location-request:
+    post:
+      summary: Create location change request
+      parameters:
+        - $ref: "#/components/parameters/ItemID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemLocationRequestPayload"
+      responses:
+        "200":
+          description: Created or existing location request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemLocationRequest"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized
+        "404":
+          description: Item, location, or approver not found
+        "409":
+          description: Conflict (user can change location directly)
+
+  /item-location-requests/incoming:
+    get:
+      summary: Incoming location requests for accountant/admin
+      responses:
+        "200":
+          description: Incoming location requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemLocationRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /item-location-requests/{requestID}/approve:
+    post:
+      summary: Approve location request
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+      responses:
+        "200":
+          description: Approved location request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemLocationRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Location request, item, or location not found
+        "409":
+          description: Request already processed
+
+  /inventory-requests/drafts:
+    post:
+      summary: Create inventory request draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryRequestDraftPayload"
+      responses:
+        "200":
+          description: Created inventory request draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden (accountant/admin only)
+        "404":
+          description: Materially responsible user not found
+
+  /inventory-requests/incoming:
+    get:
+      summary: Incoming inventory requests for materially responsible user
+      responses:
+        "200":
+          description: Submitted inventory requests assigned to current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryRequestResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /inventory-requests/mine:
+    get:
+      summary: Inventory requests created by current accountant
+      responses:
+        "200":
+          description: Inventory requests created by current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryRequestResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /inventory-requests/{requestID}:
+    get:
+      summary: Get inventory request details
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+      responses:
+        "200":
+          description: Inventory request details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "400":
+          description: Invalid requestID
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Inventory request not found
+
+  /inventory-requests/{requestID}/items:
+    put:
+      summary: Set selected items for inventory draft
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryRequestItemsPayload"
+      responses:
+        "200":
+          description: Updated inventory request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Inventory request or item not found
+        "409":
+          description: Conflict (invalid state or item overlap)
+
+  /inventory-requests/{requestID}/submit:
+    post:
+      summary: Submit inventory draft to materially responsible user
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+      responses:
+        "200":
+          description: Submitted inventory request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Inventory request not found
+        "409":
+          description: Conflict (invalid state)
+
+  /inventory-requests/{requestID}/items/{itemID}/scan:
+    post:
+      summary: Scan inventory item by QR payload
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/ItemID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryScanPayload"
+      responses:
+        "200":
+          description: Updated inventory request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Inventory request or item not found
+        "409":
+          description: Conflict (invalid state or scan mismatch)
+
+  /inventory-requests/{requestID}/mrp-complete:
+    post:
+      summary: Complete inventory request by materially responsible user
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryMRPCompletePayload"
+      responses:
+        "200":
+          description: Inventory request completed by MRP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Inventory request not found
+        "409":
+          description: Conflict (invalid state or incomplete scans for success)
+
+  /inventory-requests/{requestID}/final-approve:
+    post:
+      summary: Final approve inventory request by creator accountant
+      parameters:
+        - $ref: "#/components/parameters/RequestID"
+      responses:
+        "200":
+          description: Finalized inventory request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryRequestResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Inventory request not found
+        "409":
+          description: Conflict (invalid state transition)
 
   /items/{itemID}/grab:
     post:
@@ -290,6 +567,21 @@ paths:
           description: Forbidden (role required)
         "404":
           description: Item or location not found
+
+  /item-categories/counts:
+    get:
+      summary: Get item counts by category
+      responses:
+        "200":
+          description: Item counts by category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemCategoryItemsCountResponse"
+        "401":
+          description: Unauthorized
 
   /user-items:
     get:
@@ -565,6 +857,13 @@ components:
       schema:
         type: integer
         minimum: 1
+    RequestID:
+      name: requestID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     JournalPage:
       name: page
       in: query
@@ -596,11 +895,31 @@ components:
 
     DashboardWidgetType:
       type: string
-      enum: [balance_statics]
+      enum: [balance_statics, grabbed_items]
+
+    DashboardBalanceItemPayload:
+      type: object
+      required: [itemID, number, name, priceRub, accumulatedPriceRub]
+      properties:
+        itemID:
+          type: string
+          format: uuid
+        number:
+          type: string
+        name:
+          type: string
+        priceRub:
+          type: number
+          format: double
+          multipleOf: 0.01
+        accumulatedPriceRub:
+          type: number
+          format: double
+          multipleOf: 0.01
 
     DashboardWidgetPayload:
       type: object
-      required: [totalBalanceRub, currency]
+      required: [totalBalanceRub, currency, items]
       properties:
         totalBalanceRub:
           type: number
@@ -609,6 +928,10 @@ components:
         currency:
           type: string
           enum: [RUB]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardBalanceItemPayload"
 
     DashboardWidgetResponse:
       type: object
@@ -623,6 +946,46 @@ components:
           type: boolean
         payload:
           $ref: "#/components/schemas/DashboardWidgetPayload"
+        grabbedItemsPayload:
+          allOf:
+            - $ref: "#/components/schemas/DashboardGrabbedItemsPayload"
+          nullable: true
+
+    DashboardGrabbedItemPayload:
+      type: object
+      required: [userItemID, itemID, number, name]
+      properties:
+        userItemID:
+          type: string
+          format: uuid
+        itemID:
+          type: string
+          format: uuid
+        number:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        priceRub:
+          type: number
+          format: double
+          nullable: true
+          multipleOf: 0.01
+        grabbedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DashboardGrabbedItemsPayload:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardGrabbedItemPayload"
 
     DashboardResponse:
       type: object
@@ -665,6 +1028,22 @@ components:
           nullable: true
       additionalProperties: true
 
+    ItemCategoryItemsCountResponse:
+      type: object
+      required:
+        - categoryName
+        - itemsCount
+      properties:
+        categoryID:
+          type: string
+          format: uuid
+          nullable: true
+        categoryName:
+          type: string
+        itemsCount:
+          type: integer
+          minimum: 0
+
     ItemParameter:
       type: object
       properties:
@@ -701,15 +1080,24 @@ components:
             - $ref: "#/components/schemas/ItemCategory"
           nullable: true
         responsibleUser:
-          oneOf:
-            - $ref: "#/components/schemas/EntityRef"
-            - $ref: "#/components/schemas/UserPublic"
+          $ref: "#/components/schemas/ItemResponsibleUserResponse"
           nullable: true
         parameters:
           type: array
           items:
             $ref: "#/components/schemas/ItemParameter"
       additionalProperties: true
+
+    ItemResponsibleUserResponse:
+      type: object
+      required: [fullName]
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        fullName:
+          type: string
 
     Location:
       type: object
@@ -750,6 +1138,48 @@ components:
           oneOf:
             - $ref: "#/components/schemas/EntityRef"
             - $ref: "#/components/schemas/Location"
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: true
+
+    ItemLocationRequestStatus:
+      type: string
+      enum: [requested, approved]
+
+    ItemLocationRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item:
+          oneOf:
+            - $ref: "#/components/schemas/EntityRef"
+            - $ref: "#/components/schemas/Item"
+        location:
+          oneOf:
+            - $ref: "#/components/schemas/EntityRef"
+            - $ref: "#/components/schemas/Location"
+        requester:
+          oneOf:
+            - $ref: "#/components/schemas/EntityRef"
+            - $ref: "#/components/schemas/UserPublic"
+        requestedToUserID:
+          type: string
+          format: uuid
+          nullable: true
+        approvedByUserID:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ItemLocationRequestStatus"
         createdAt:
           type: string
           format: date-time
@@ -966,6 +1396,106 @@ components:
         hasNext:
           type: boolean
 
+    InventoryRequestStatus:
+      type: string
+      enum:
+        - draft
+        - submitted
+        - mrp_completed_success
+        - mrp_completed_missing
+        - finalized_success
+        - finalized_missing
+
+    InventoryRequestItemStatus:
+      type: string
+      enum: [pending, found, missing]
+
+    InventoryMRPCompleteOutcome:
+      type: string
+      enum: [success, missing]
+
+    InventoryRequestItemResponse:
+      type: object
+      required: [itemID, itemNumber, itemName, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        itemID:
+          type: string
+          format: uuid
+        itemNumber:
+          type: string
+        itemName:
+          type: string
+        status:
+          $ref: "#/components/schemas/InventoryRequestItemStatus"
+        scannedAt:
+          type: string
+          format: date-time
+          nullable: true
+        scannedByUserID:
+          type: string
+          format: uuid
+          nullable: true
+        scannedItemID:
+          type: string
+          format: uuid
+          nullable: true
+
+    InventoryRequestResponse:
+      type: object
+      required: [requesterUserID, materiallyResponsibleUserID, inventoryDate, status, items]
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        requesterUserID:
+          type: string
+          format: uuid
+        materiallyResponsibleUserID:
+          type: string
+          format: uuid
+        inventoryDate:
+          type: string
+          format: date
+        status:
+          $ref: "#/components/schemas/InventoryRequestStatus"
+        submittedAt:
+          type: string
+          format: date-time
+          nullable: true
+        mrpCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        mrpCompletedByUserID:
+          type: string
+          format: uuid
+          nullable: true
+        finalApprovedAt:
+          type: string
+          format: date-time
+          nullable: true
+        finalApprovedByUserID:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryRequestItemResponse"
+
     CreateItemRequest:
       type: object
       required: [number, name, responsibleUserID]
@@ -1045,6 +1575,18 @@ components:
           format: uuid
           nullable: true
 
+    CreateItemLocationRequestPayload:
+      type: object
+      required: [locationID]
+      properties:
+        locationID:
+          type: string
+          format: uuid
+        requestedToUserID:
+          type: string
+          format: uuid
+          nullable: true
+
     GrabItemRequest:
       type: object
       properties:
@@ -1103,3 +1645,39 @@ components:
         toUserID:
           type: string
           format: uuid
+
+    CreateInventoryRequestDraftPayload:
+      type: object
+      required: [materiallyResponsibleUserID, inventoryDate]
+      properties:
+        materiallyResponsibleUserID:
+          type: string
+          format: uuid
+        inventoryDate:
+          type: string
+          format: date
+
+    UpdateInventoryRequestItemsPayload:
+      type: object
+      required: [itemIDs]
+      properties:
+        itemIDs:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    InventoryScanPayload:
+      type: object
+      required: [scannedItemID]
+      properties:
+        scannedItemID:
+          type: string
+          format: uuid
+
+    InventoryMRPCompletePayload:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          $ref: "#/components/schemas/InventoryMRPCompleteOutcome"

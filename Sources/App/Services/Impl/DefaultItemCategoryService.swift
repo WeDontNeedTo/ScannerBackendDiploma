@@ -11,6 +11,17 @@ struct DefaultItemCategoryService: ItemCategoryService {
         try await itemCategoryRepository.list(on: context.db)
     }
 
+    func counts(context: ServiceContext) async throws -> [ItemCategoryItemsCountResponse] {
+        let counts = try await itemCategoryRepository.listWithItemCounts(on: context.db)
+        return counts.map {
+            ItemCategoryItemsCountResponse(
+                categoryID: $0.categoryID,
+                categoryName: $0.categoryName,
+                itemsCount: $0.itemsCount
+            )
+        }
+    }
+
     func create(payload: CreateItemCategoryRequest, context: ServiceContext) async throws -> ItemCategory {
         let category = ItemCategory(name: payload.name, description: payload.description)
         try await itemCategoryRepository.save(category, on: context.db)

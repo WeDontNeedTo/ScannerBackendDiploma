@@ -74,14 +74,66 @@ struct FluentItemRepository: ItemRepository {
             .filter(\.$responsibleUser.$id == responsibleUserID)
             .all()
 
-        let totalBalanceRub = items.reduce(Decimal.zero) { partial, item in
-            partial + (item.priceRub ?? .zero)
+        let pricedItems = items.compactMap { item -> DashboardBalanceItemStats? in
+            guard let itemID = item.id, let priceRub = item.priceRub else {
+                return nil
+            }
+            return DashboardBalanceItemStats(
+                itemID: itemID,
+                number: item.number,
+                name: item.name,
+                priceRub: priceRub,
+                accumulatedPriceRub: priceRub
+            )
+        }
+
+        let totalBalanceRub = pricedItems.reduce(Decimal.zero) { partial, item in
+            partial + item.accumulatedPriceRub
         }
 
         return DashboardBalanceStats(
             ownedItemsCount: items.count,
-            totalBalanceRub: totalBalanceRub
+            totalBalanceRub: totalBalanceRub,
+            items: pricedItems
         )
+    }
+
+    func countByResponsibleUser(responsibleUserID: UUID, on db: Database) async throws -> Int {
+        try await Item.query(on: db)
+            .filter(\.$responsibleUser.$id == responsibleUserID)
+            .count()
+    }
+
+    func listByResponsibleUserWithRelations(responsibleUserID: UUID, on db: Database) async throws -> [Item] {
+        try await Item.query(on: db)
+            .filter(\.$responsibleUser.$id == responsibleUserID)
+            .with(\.$parameters)
+            .with(\.$category)
+            .with(\.$responsibleUser)
+            .all()
+    }
+
+    func findAllByIDs(_ ids: [UUID], on db: Database) async throws -> [Item] {
+        guard !ids.isEmpty else { return [] }
+        return try await Item.query(on: db)
+            .filter(\.$id ~~ ids)
+            .all()
+    }
+
+    func findAllByIDsWithRelations(_ ids: [UUID], on db: Database) async throws -> [Item] {
+        guard !ids.isEmpty else { return [] }
+        return try await Item.query(on: db)
+            .filter(\.$id ~~ ids)
+            .with(\.$parameters)
+            .with(\.$category)
+            .with(\.$responsibleUser)
+            .all()
+    }
+
+    func saveAll(_ items: [Item], on db: Database) async throws {
+        for item in items {
+            try await item.save(on: db)
+        }
     }
 
     func find(id: UUID, on db: Database) async throws -> Item? {

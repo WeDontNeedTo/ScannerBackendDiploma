@@ -28,6 +28,9 @@ public func configure(_ app: Application) throws {
         userRepository: FluentUserRepository(),
         userItemRepository: FluentUserItemRepository(),
         itemLocationRepository: FluentItemLocationRepository(),
+        itemLocationRequestRepository: FluentItemLocationRequestRepository(),
+        inventoryRequestRepository: FluentInventoryRequestRepository(),
+        inventoryRequestItemRepository: FluentInventoryRequestItemRepository(),
         itemJournalRepository: FluentItemJournalRepository(),
         brokenItemRepository: FluentBrokenItemRepository(),
         itemCategoryRepository: FluentItemCategoryRepository(),
@@ -40,6 +43,12 @@ public func configure(_ app: Application) throws {
     app.services = ServiceContainer(
         dashboardService: DefaultDashboardService(repositories: app.repositories),
         itemService: DefaultItemService(repositories: app.repositories, itemJournalService: itemJournalService),
+        itemLocationRequestService: DefaultItemLocationRequestService(
+            repositories: app.repositories,
+            itemJournalService: itemJournalService
+        ),
+        inventoryRequestService: DefaultInventoryRequestService(repositories: app.repositories),
+        settingsUserService: DefaultSettingsUserService(repositories: app.repositories),
         itemJournalService: itemJournalService,
         userItemService: DefaultUserItemService(
             repositories: app.repositories,
@@ -75,6 +84,9 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateItemLocation())
     app.migrations.add(AddItemLocationTimestamps())
     app.migrations.add(RemoveItemLocationQuantity())
+    app.migrations.add(CreateItemLocationRequest())
+    app.migrations.add(CreateInventoryRequest())
+    app.migrations.add(CreateInventoryRequestItem())
     app.migrations.add(CreateBrokenItem())
     app.migrations.add(CreateAuditLog())
     app.migrations.add(CreateItemJournalEvent())

@@ -10,6 +10,7 @@ struct ItemCategoryController: RouteCollection {
             category.put(use: update)
             category.delete(use: delete)
         }
+        categories.get("counts", use: counts)
     }
 
     func index(req: Request) async throws -> [ItemCategory] {
@@ -31,6 +32,16 @@ struct ItemCategoryController: RouteCollection {
             )
             try await req.audit(action: "create", entity: "item_categories", entityID: category.id)
             return category
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
+    }
+
+    func counts(req: Request) async throws -> [ItemCategoryItemsCountResponse] {
+        do {
+            let counts = try await req.application.services.itemCategoryService.counts(context: context(req))
+            try await req.audit(action: "read", entity: "item_categories", message: "counts")
+            return counts
         } catch let error as DomainError {
             throw error.asAbort()
         }

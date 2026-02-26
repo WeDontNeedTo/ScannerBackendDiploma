@@ -118,7 +118,8 @@ struct DefaultItemService: ItemService {
         }
         let grabbedByAnotherUser = existingGrab != nil && existingGrab?.$user.id != userID
 
-        let grabDirect = hasResponsibleUser && !grabbedByAnotherUser && canUseDirectFlow
+        let canGrabDirectly = canUseDirectFlow || isCurrentResponsiblePerson
+        let grabDirect = hasResponsibleUser && !grabbedByAnotherUser && canGrabDirectly
         let grabRequest = hasResponsibleUser && !grabbedByAnotherUser && !grabDirect
 
         let setLocationDirect = canUseDirectFlow || isCurrentResponsiblePerson
@@ -162,12 +163,13 @@ struct DefaultItemService: ItemService {
 
     func setLocation(data: ItemSetLocationData, context: ServiceContext) async throws -> OperationResult<ItemLocation> {
         let user = try requireCurrentUser(context)
-        guard user.canManageInventory else {
-            throw DomainError.forbidden("This action requires materially responsible person, accountant, or admin role.")
-        }
-
         guard let item = try await itemRepository.find(id: data.itemID, on: context.db) else {
             throw DomainError.notFound(nil)
+        }
+        let userID = try user.requireID()
+        let canSetDirectly = user.canBypassRequestFlow || item.$responsibleUser.id == userID
+        guard canSetDirectly else {
+            throw DomainError.forbidden("Direct location change is allowed only for current responsible user, accountant, or admin.")
         }
 
         guard let location = try await locationRepository.find(id: data.locationID, on: context.db) else {
@@ -249,20 +251,26 @@ struct DefaultItemService: ItemService {
             throw DomainError.conflict("Item is already grabbed by another user.")
         }
 
-        let requestedToUserID = try await resolveRequestedToUserID(
-            requestedToUserID: data.requestedToUserID,
-            fallbackResponsibleUserID: item.$responsibleUser.id,
-            requester: user,
-            db: context.db
-        )
+        let canApproveDirectly = user.canBypassRequestFlow || item.$responsibleUser.id == userID
+        let requestedToUserID: UUID?
+        if canApproveDirectly {
+            requestedToUserID = nil
+        } else {
+            requestedToUserID = try await resolveRequestedToUserID(
+                requestedToUserID: data.requestedToUserID,
+                fallbackResponsibleUserID: item.$responsibleUser.id,
+                requester: user,
+                db: context.db
+            )
+        }
 
-        let status: UserItemStatus = user.canBypassRequestFlow ? .approved : .requested
+        let status: UserItemStatus = canApproveDirectly ? .approved : .requested
         let userItem = UserItem(
             userID: userID,
             itemID: data.itemID,
             status: status,
-            approvedByUserID: user.canBypassRequestFlow ? userID : nil,
-            requestedToUserID: user.canBypassRequestFlow ? nil : requestedToUserID
+            approvedByUserID: canApproveDirectly ? userID : nil,
+            requestedToUserID: requestedToUserID
         )
         if status == .approved {
             userItem.grabbedAt = Date()

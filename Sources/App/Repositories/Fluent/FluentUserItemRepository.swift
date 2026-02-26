@@ -9,6 +9,14 @@ struct FluentUserItemRepository: UserItemRepository {
             .all()
     }
 
+    func listApprovedForUser(userID: UUID, on db: Database) async throws -> [UserItem] {
+        try await UserItem.query(on: db)
+            .filter(\.$user.$id == userID)
+            .filter(\.$status == .approved)
+            .with(\.$item)
+            .all()
+    }
+
     func listAllWithItem(on db: Database) async throws -> [UserItem] {
         try await UserItem.query(on: db)
             .with(\.$item)

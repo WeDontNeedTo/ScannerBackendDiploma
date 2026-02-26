@@ -172,6 +172,9 @@ private func makeJournalRepositoryContainer(
         userRepository: JournalTestUserRepository(),
         userItemRepository: JournalTestUserItemRepository(),
         itemLocationRepository: JournalTestItemLocationRepository(),
+        itemLocationRequestRepository: JournalTestItemLocationRequestRepository(),
+        inventoryRequestRepository: JournalTestInventoryRequestRepository(),
+        inventoryRequestItemRepository: JournalTestInventoryRequestItemRepository(),
         itemJournalRepository: journalRepository,
         brokenItemRepository: JournalTestBrokenItemRepository(),
         itemCategoryRepository: JournalTestItemCategoryRepository(),
@@ -189,8 +192,13 @@ private final class JournalTestItemRepository: ItemRepository {
     func findWithRelations(number: String, on db: Database) async throws -> Item? { nil }
     func search(with data: ItemSearchData, on db: Database) async throws -> [Item] { [] }
     func dashboardBalanceStats(responsibleUserID: UUID, on db: Database) async throws -> DashboardBalanceStats {
-        DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero)
+        DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero, items: [])
     }
+    func countByResponsibleUser(responsibleUserID: UUID, on db: Database) async throws -> Int { 0 }
+    func listByResponsibleUserWithRelations(responsibleUserID: UUID, on db: Database) async throws -> [Item] { [] }
+    func findAllByIDs(_ ids: [UUID], on db: Database) async throws -> [Item] { [] }
+    func findAllByIDsWithRelations(_ ids: [UUID], on db: Database) async throws -> [Item] { [] }
+    func saveAll(_ items: [Item], on db: Database) async throws {}
     func find(id: UUID, on db: Database) async throws -> Item? {
         try findHandler?(db, id)
     }
@@ -224,6 +232,8 @@ private final class JournalTestItemJournalRepository: ItemJournalRepository {
 private struct JournalTestUserRepository: UserRepository {
     func find(id: UUID, on db: Database) async throws -> User? { nil }
     func findByLogin(_ login: String, on db: Database) async throws -> User? { nil }
+    func list(page: Int, per: Int, on db: Database) async throws -> [User] { [] }
+    func count(on db: Database) async throws -> Int { 0 }
     func listMateriallyResponsible(on db: Database) async throws -> [User] { [] }
     func save(_ user: User, on db: Database) async throws {}
 }
@@ -246,13 +256,41 @@ private struct JournalTestItemLocationRepository: ItemLocationRepository {
     func save(_ itemLocation: ItemLocation, on db: Database) async throws {}
 }
 
+private struct JournalTestItemLocationRequestRepository: ItemLocationRequestRepository {
+    func find(id: UUID, on db: Database) async throws -> ItemLocationRequest? { nil }
+    func findRequested(itemID: UUID, locationID: UUID, requesterUserID: UUID, on db: Database) async throws -> ItemLocationRequest? { nil }
+    func listIncoming(for userID: UUID, on db: Database) async throws -> [ItemLocationRequest] { [] }
+    func save(_ request: ItemLocationRequest, on db: Database) async throws {}
+}
+
+private struct JournalTestInventoryRequestRepository: InventoryRequestRepository {
+    func create(_ request: InventoryRequest, on db: Database) async throws {}
+    func find(id: UUID, on db: Database) async throws -> InventoryRequest? { nil }
+    func findWithItems(id: UUID, on db: Database) async throws -> InventoryRequest? { nil }
+    func listIncoming(materiallyResponsibleUserID: UUID, on db: Database) async throws -> [InventoryRequest] { [] }
+    func listMine(requesterUserID: UUID, on db: Database) async throws -> [InventoryRequest] { [] }
+    func save(_ request: InventoryRequest, on db: Database) async throws {}
+    func findActiveConflictingItemIDs(itemIDs: [UUID], excludingRequestID: UUID?, on db: Database) async throws -> Set<UUID> { [] }
+}
+
+private struct JournalTestInventoryRequestItemRepository: InventoryRequestItemRepository {
+    func create(_ item: InventoryRequestItem, on db: Database) async throws {}
+    func find(requestID: UUID, itemID: UUID, on db: Database) async throws -> InventoryRequestItem? { nil }
+    func listByRequestID(requestID: UUID, on db: Database) async throws -> [InventoryRequestItem] { [] }
+    func deleteByRequestID(requestID: UUID, on db: Database) async throws {}
+    func save(_ item: InventoryRequestItem, on db: Database) async throws {}
+}
+
 private struct JournalTestBrokenItemRepository: BrokenItemRepository {
     func hasPositiveQuantity(itemID: UUID, on db: Database) async throws -> Bool { false }
+    func listWithItem(on db: Database) async throws -> [BrokenItem] { [] }
+    func listWithItem(responsibleUserID: UUID, on db: Database) async throws -> [BrokenItem] { [] }
     func save(_ brokenItem: BrokenItem, on db: Database) async throws {}
 }
 
 private struct JournalTestItemCategoryRepository: ItemCategoryRepository {
     func list(on db: Database) async throws -> [ItemCategory] { [] }
+    func listWithItemCounts(on db: Database) async throws -> [ItemCategoryItemsCount] { [] }
     func exists(id: UUID, on db: Database) async throws -> Bool { false }
     func find(id: UUID, on db: Database) async throws -> ItemCategory? { nil }
     func save(_ category: ItemCategory, on db: Database) async throws {}

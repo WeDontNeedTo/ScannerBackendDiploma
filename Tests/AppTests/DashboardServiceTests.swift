@@ -13,7 +13,7 @@ final class DashboardServiceTests: XCTestCase {
         var queried = false
         itemRepository.dashboardBalanceStatsHandler = { _, _ in
             queried = true
-            return DashboardBalanceStats(ownedItemsCount: 99, totalBalanceRub: Decimal(string: "9999.99")!)
+            return DashboardBalanceStats(ownedItemsCount: 99, totalBalanceRub: Decimal(string: "9999.99")!, items: [])
         }
 
         let service = DefaultDashboardService(
@@ -23,12 +23,14 @@ final class DashboardServiceTests: XCTestCase {
             context: ServiceContext(db: app.db, currentUser: user)
         )
 
-        XCTAssertEqual(response.widgets.count, 1)
+        XCTAssertEqual(response.widgets.count, 3)
         XCTAssertEqual(response.widgets[0].type, .balanceStatics)
         XCTAssertEqual(response.widgets[0].order, 1)
         XCTAssertFalse(response.widgets[0].isAvailable)
         XCTAssertEqual(response.widgets[0].payload.totalBalanceRub, Decimal.zero)
         XCTAssertEqual(response.widgets[0].payload.currency, "RUB")
+        XCTAssertEqual(response.widgets[2].type, .brokenItems)
+        XCTAssertFalse(response.widgets[2].isAvailable)
         XCTAssertFalse(queried)
     }
 
@@ -40,7 +42,7 @@ final class DashboardServiceTests: XCTestCase {
         let user = makeDashboardUser(role: .materiallyResponsiblePerson)
         let itemRepository = MockDashboardItemRepository()
         itemRepository.dashboardBalanceStatsHandler = { _, _ in
-            DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: Decimal(string: "2500.00")!)
+            DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: Decimal(string: "2500.00")!, items: [])
         }
 
         let service = DefaultDashboardService(
@@ -62,7 +64,7 @@ final class DashboardServiceTests: XCTestCase {
         let user = makeDashboardUser(role: .materiallyResponsiblePerson)
         let itemRepository = MockDashboardItemRepository()
         itemRepository.dashboardBalanceStatsHandler = { _, _ in
-            DashboardBalanceStats(ownedItemsCount: 3, totalBalanceRub: Decimal(string: "1200.75")!)
+            DashboardBalanceStats(ownedItemsCount: 3, totalBalanceRub: Decimal(string: "1200.75")!, items: [])
         }
 
         let service = DefaultDashboardService(
@@ -84,7 +86,7 @@ final class DashboardServiceTests: XCTestCase {
         let user = makeDashboardUser(role: .accountant)
         let itemRepository = MockDashboardItemRepository()
         itemRepository.dashboardBalanceStatsHandler = { _, _ in
-            DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero)
+            DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero, items: [])
         }
 
         let service = DefaultDashboardService(
@@ -107,7 +109,7 @@ final class DashboardServiceTests: XCTestCase {
         let itemRepository = MockDashboardItemRepository()
         itemRepository.dashboardBalanceStatsHandler = { _, userID in
             XCTAssertEqual(userID, user.id)
-            return DashboardBalanceStats(ownedItemsCount: 2, totalBalanceRub: Decimal(string: "999.99")!)
+            return DashboardBalanceStats(ownedItemsCount: 2, totalBalanceRub: Decimal(string: "999.99")!, items: [])
         }
 
         let service = DefaultDashboardService(
@@ -151,6 +153,9 @@ private func makeDashboardRepositoryContainer(itemRepository: any ItemRepository
         userRepository: DashboardUserRepository(),
         userItemRepository: DashboardUserItemRepository(),
         itemLocationRepository: DashboardItemLocationRepository(),
+        itemLocationRequestRepository: DashboardItemLocationRequestRepository(),
+        inventoryRequestRepository: DashboardInventoryRequestRepository(),
+        inventoryRequestItemRepository: DashboardInventoryRequestItemRepository(),
         itemJournalRepository: DashboardItemJournalRepository(),
         brokenItemRepository: DashboardBrokenItemRepository(),
         itemCategoryRepository: DashboardItemCategoryRepository(),
@@ -169,8 +174,13 @@ private final class MockDashboardItemRepository: ItemRepository {
     func search(with data: ItemSearchData, on db: Database) async throws -> [Item] { [] }
     func dashboardBalanceStats(responsibleUserID: UUID, on db: Database) async throws -> DashboardBalanceStats {
         try dashboardBalanceStatsHandler?(db, responsibleUserID)
-            ?? DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero)
+            ?? DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero, items: [])
     }
+    func countByResponsibleUser(responsibleUserID: UUID, on db: Database) async throws -> Int { 0 }
+    func listByResponsibleUserWithRelations(responsibleUserID: UUID, on db: Database) async throws -> [Item] { [] }
+    func findAllByIDs(_ ids: [UUID], on db: Database) async throws -> [Item] { [] }
+    func findAllByIDsWithRelations(_ ids: [UUID], on db: Database) async throws -> [Item] { [] }
+    func saveAll(_ items: [Item], on db: Database) async throws {}
     func find(id: UUID, on db: Database) async throws -> Item? { nil }
     func save(_ item: Item, on db: Database) async throws {}
     func delete(_ item: Item, on db: Database) async throws {}
@@ -179,6 +189,8 @@ private final class MockDashboardItemRepository: ItemRepository {
 private struct DashboardUserRepository: UserRepository {
     func find(id: UUID, on db: Database) async throws -> User? { nil }
     func findByLogin(_ login: String, on db: Database) async throws -> User? { nil }
+    func list(page: Int, per: Int, on db: Database) async throws -> [User] { [] }
+    func count(on db: Database) async throws -> Int { 0 }
     func listMateriallyResponsible(on db: Database) async throws -> [User] { [] }
     func save(_ user: User, on db: Database) async throws {}
 }
@@ -201,6 +213,31 @@ private struct DashboardItemLocationRepository: ItemLocationRepository {
     func save(_ itemLocation: ItemLocation, on db: Database) async throws {}
 }
 
+private struct DashboardItemLocationRequestRepository: ItemLocationRequestRepository {
+    func find(id: UUID, on db: Database) async throws -> ItemLocationRequest? { nil }
+    func findRequested(itemID: UUID, locationID: UUID, requesterUserID: UUID, on db: Database) async throws -> ItemLocationRequest? { nil }
+    func listIncoming(for userID: UUID, on db: Database) async throws -> [ItemLocationRequest] { [] }
+    func save(_ request: ItemLocationRequest, on db: Database) async throws {}
+}
+
+private struct DashboardInventoryRequestRepository: InventoryRequestRepository {
+    func create(_ request: InventoryRequest, on db: Database) async throws {}
+    func find(id: UUID, on db: Database) async throws -> InventoryRequest? { nil }
+    func findWithItems(id: UUID, on db: Database) async throws -> InventoryRequest? { nil }
+    func listIncoming(materiallyResponsibleUserID: UUID, on db: Database) async throws -> [InventoryRequest] { [] }
+    func listMine(requesterUserID: UUID, on db: Database) async throws -> [InventoryRequest] { [] }
+    func save(_ request: InventoryRequest, on db: Database) async throws {}
+    func findActiveConflictingItemIDs(itemIDs: [UUID], excludingRequestID: UUID?, on db: Database) async throws -> Set<UUID> { [] }
+}
+
+private struct DashboardInventoryRequestItemRepository: InventoryRequestItemRepository {
+    func create(_ item: InventoryRequestItem, on db: Database) async throws {}
+    func find(requestID: UUID, itemID: UUID, on db: Database) async throws -> InventoryRequestItem? { nil }
+    func listByRequestID(requestID: UUID, on db: Database) async throws -> [InventoryRequestItem] { [] }
+    func deleteByRequestID(requestID: UUID, on db: Database) async throws {}
+    func save(_ item: InventoryRequestItem, on db: Database) async throws {}
+}
+
 private struct DashboardItemJournalRepository: ItemJournalRepository {
     func create(_ event: ItemJournalEvent, on db: Database) async throws {}
     func list(itemID: UUID, offset: Int, limit: Int, on db: Database) async throws -> [ItemJournalEvent] { [] }
@@ -209,11 +246,14 @@ private struct DashboardItemJournalRepository: ItemJournalRepository {
 
 private struct DashboardBrokenItemRepository: BrokenItemRepository {
     func hasPositiveQuantity(itemID: UUID, on db: Database) async throws -> Bool { false }
+    func listWithItem(on db: Database) async throws -> [BrokenItem] { [] }
+    func listWithItem(responsibleUserID: UUID, on db: Database) async throws -> [BrokenItem] { [] }
     func save(_ brokenItem: BrokenItem, on db: Database) async throws {}
 }
 
 private struct DashboardItemCategoryRepository: ItemCategoryRepository {
     func list(on db: Database) async throws -> [ItemCategory] { [] }
+    func listWithItemCounts(on db: Database) async throws -> [ItemCategoryItemsCount] { [] }
     func exists(id: UUID, on db: Database) async throws -> Bool { false }
     func find(id: UUID, on db: Database) async throws -> ItemCategory? { nil }
     func save(_ category: ItemCategory, on db: Database) async throws {}

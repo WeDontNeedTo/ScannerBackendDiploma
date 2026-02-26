@@ -14,6 +14,7 @@ struct ItemController: RouteCollection {
             item.get("journal", use: journal)
             item.get("available_actions", use: availableActions)
             item.post("location", use: setLocation)
+            item.post("location-request", use: requestLocationChange)
             item.post("grab", use: grab)
             item.post("broken", use: moveToBroken)
             item.put(use: update)
@@ -150,6 +151,25 @@ struct ItemController: RouteCollection {
             )
             try await req.audit(action: "read", entity: "items", entityID: itemID, message: "available_actions")
             return response
+        } catch let error as DomainError {
+            throw error.asAbort()
+        }
+    }
+
+    func requestLocationChange(req: Request) async throws -> ItemLocationRequest {
+        do {
+            let payload = try req.content.decode(CreateItemLocationRequestPayload.self)
+            let itemID = try req.requireUUID("itemID")
+            let request = try await req.application.services.itemLocationRequestService.create(
+                data: ItemLocationRequestCreateData(
+                    itemID: itemID,
+                    locationID: payload.locationID,
+                    requestedToUserID: payload.requestedToUserID
+                ),
+                context: context(req)
+            )
+            try await req.audit(action: "create", entity: "item_location_requests", entityID: request.id)
+            return request
         } catch let error as DomainError {
             throw error.asAbort()
         }

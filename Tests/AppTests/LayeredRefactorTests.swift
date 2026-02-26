@@ -93,6 +93,77 @@ final class LayeredRefactorTests: XCTestCase {
         XCTAssertEqual(result.value.approvedByUserID, try accountant.requireID())
         XCTAssertNil(result.value.requestedToUserID)
     }
+
+    func testResponsiblePersonCreateUserItemBypassesRequestFlowForOwnItem() async throws {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try configure(app)
+
+        let mrp = makeUser(role: .materiallyResponsiblePerson)
+        let item = makeItem(responsibleUserID: try mrp.requireID())
+
+        let itemRepository = MockItemRepository()
+        itemRepository.findHandler = { _, id in
+            id == (try item.requireID()) ? item : nil
+        }
+
+        let userRepository = MockUserRepository()
+        let userItemRepository = MockUserItemRepository()
+        userItemRepository.findByItemIDHandler = { _, _ in nil }
+
+        let service = DefaultUserItemService(repositories: makeRepositoryContainer(
+            itemRepository: itemRepository,
+            userRepository: userRepository,
+            userItemRepository: userItemRepository
+        ), itemJournalService: MockItemJournalService())
+
+        let result = try await service.create(
+            data: UserItemCreateData(itemID: try item.requireID(), requestedToUserID: nil),
+            context: ServiceContext(db: app.db, currentUser: mrp)
+        )
+
+        XCTAssertEqual(result.kind, .create)
+        XCTAssertEqual(result.value.status, .approved)
+        XCTAssertEqual(result.value.approvedByUserID, try mrp.requireID())
+        XCTAssertNil(result.value.requestedToUserID)
+    }
+
+    func testResponsiblePersonGrabBypassesRequestFlowForOwnItem() async throws {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try configure(app)
+
+        let mrp = makeUser(role: .materiallyResponsiblePerson)
+        let item = makeItem(responsibleUserID: try mrp.requireID())
+
+        let itemRepository = MockItemRepository()
+        itemRepository.findHandler = { _, id in
+            id == (try item.requireID()) ? item : nil
+        }
+
+        let userRepository = MockUserRepository()
+        let userItemRepository = MockUserItemRepository()
+        userItemRepository.findByItemIDHandler = { _, _ in nil }
+
+        let service = DefaultItemService(
+            repositories: makeRepositoryContainer(
+                itemRepository: itemRepository,
+                userRepository: userRepository,
+                userItemRepository: userItemRepository
+            ),
+            itemJournalService: MockItemJournalService()
+        )
+
+        let result = try await service.grab(
+            data: ItemGrabData(itemID: try item.requireID(), requestedToUserID: nil),
+            context: ServiceContext(db: app.db, currentUser: mrp)
+        )
+
+        XCTAssertEqual(result.kind, .create)
+        XCTAssertEqual(result.value.status, .approved)
+        XCTAssertEqual(result.value.approvedByUserID, try mrp.requireID())
+        XCTAssertNil(result.value.requestedToUserID)
+    }
 }
 
 private func makeUser(role: UserRole) -> User {
@@ -124,6 +195,9 @@ private func makeRepositoryContainer(
         userRepository: userRepository,
         userItemRepository: userItemRepository,
         itemLocationRepository: MockItemLocationRepository(),
+        itemLocationRequestRepository: MockItemLocationRequestRepository(),
+        inventoryRequestRepository: MockInventoryRequestRepository(),
+        inventoryRequestItemRepository: MockInventoryRequestItemRepository(),
         itemJournalRepository: MockItemJournalRepository(),
         brokenItemRepository: MockBrokenItemRepository(),
         itemCategoryRepository: MockItemCategoryRepository(),
@@ -139,6 +213,11 @@ private final class MockItemRepository: ItemRepository {
     var findWithRelationsByNumberHandler: ((Database, String) throws -> Item?)?
     var searchHandler: ((Database, ItemSearchData) throws -> [Item])?
     var dashboardBalanceStatsHandler: ((Database, UUID) throws -> DashboardBalanceStats)?
+    var countByResponsibleUserHandler: ((Database, UUID) throws -> Int)?
+    var listByResponsibleUserWithRelationsHandler: ((Database, UUID) throws -> [Item])?
+    var findAllByIDsHandler: ((Database, [UUID]) throws -> [Item])?
+    var findAllByIDsWithRelationsHandler: ((Database, [UUID]) throws -> [Item])?
+    var saveAllHandler: ((Database, [Item]) throws -> Void)?
     var findHandler: ((Database, UUID) throws -> Item?)?
     var saveHandler: ((Database, Item) throws -> Void)?
     var deleteHandler: ((Database, Item) throws -> Void)?
@@ -161,7 +240,27 @@ private final class MockItemRepository: ItemRepository {
 
     func dashboardBalanceStats(responsibleUserID: UUID, on db: Database) async throws -> DashboardBalanceStats {
         try dashboardBalanceStatsHandler?(db, responsibleUserID)
-            ?? DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero)
+            ?? DashboardBalanceStats(ownedItemsCount: 0, totalBalanceRub: .zero, items: [])
+    }
+
+    func countByResponsibleUser(responsibleUserID: UUID, on db: Database) async throws -> Int {
+        try countByResponsibleUserHandler?(db, responsibleUserID) ?? 0
+    }
+
+    func listByResponsibleUserWithRelations(responsibleUserID: UUID, on db: Database) async throws -> [Item] {
+        try listByResponsibleUserWithRelationsHandler?(db, responsibleUserID) ?? []
+    }
+
+    func findAllByIDs(_ ids: [UUID], on db: Database) async throws -> [Item] {
+        try findAllByIDsHandler?(db, ids) ?? []
+    }
+
+    func findAllByIDsWithRelations(_ ids: [UUID], on db: Database) async throws -> [Item] {
+        try findAllByIDsWithRelationsHandler?(db, ids) ?? []
+    }
+
+    func saveAll(_ items: [Item], on db: Database) async throws {
+        try saveAllHandler?(db, items)
     }
 
     func find(id: UUID, on db: Database) async throws -> Item? {
@@ -180,6 +279,8 @@ private final class MockItemRepository: ItemRepository {
 private final class MockUserRepository: UserRepository {
     var findHandler: ((Database, UUID) throws -> User?)?
     var findByLoginHandler: ((Database, String) throws -> User?)?
+    var listHandler: ((Database, Int, Int) throws -> [User])?
+    var countHandler: ((Database) throws -> Int)?
     var listMateriallyResponsibleHandler: ((Database) throws -> [User])?
     var saveHandler: ((Database, User) throws -> Void)?
 
@@ -189,6 +290,14 @@ private final class MockUserRepository: UserRepository {
 
     func findByLogin(_ login: String, on db: Database) async throws -> User? {
         try findByLoginHandler?(db, login)
+    }
+
+    func list(page: Int, per: Int, on db: Database) async throws -> [User] {
+        try listHandler?(db, page, per) ?? []
+    }
+
+    func count(on db: Database) async throws -> Int {
+        try countHandler?(db) ?? 0
     }
 
     func listMateriallyResponsible(on db: Database) async throws -> [User] {
@@ -254,13 +363,41 @@ private struct MockItemLocationRepository: ItemLocationRepository {
     func save(_ itemLocation: ItemLocation, on db: Database) async throws {}
 }
 
+private struct MockItemLocationRequestRepository: ItemLocationRequestRepository {
+    func find(id: UUID, on db: Database) async throws -> ItemLocationRequest? { nil }
+    func findRequested(itemID: UUID, locationID: UUID, requesterUserID: UUID, on db: Database) async throws -> ItemLocationRequest? { nil }
+    func listIncoming(for userID: UUID, on db: Database) async throws -> [ItemLocationRequest] { [] }
+    func save(_ request: ItemLocationRequest, on db: Database) async throws {}
+}
+
+private struct MockInventoryRequestRepository: InventoryRequestRepository {
+    func create(_ request: InventoryRequest, on db: Database) async throws {}
+    func find(id: UUID, on db: Database) async throws -> InventoryRequest? { nil }
+    func findWithItems(id: UUID, on db: Database) async throws -> InventoryRequest? { nil }
+    func listIncoming(materiallyResponsibleUserID: UUID, on db: Database) async throws -> [InventoryRequest] { [] }
+    func listMine(requesterUserID: UUID, on db: Database) async throws -> [InventoryRequest] { [] }
+    func save(_ request: InventoryRequest, on db: Database) async throws {}
+    func findActiveConflictingItemIDs(itemIDs: [UUID], excludingRequestID: UUID?, on db: Database) async throws -> Set<UUID> { [] }
+}
+
+private struct MockInventoryRequestItemRepository: InventoryRequestItemRepository {
+    func create(_ item: InventoryRequestItem, on db: Database) async throws {}
+    func find(requestID: UUID, itemID: UUID, on db: Database) async throws -> InventoryRequestItem? { nil }
+    func listByRequestID(requestID: UUID, on db: Database) async throws -> [InventoryRequestItem] { [] }
+    func deleteByRequestID(requestID: UUID, on db: Database) async throws {}
+    func save(_ item: InventoryRequestItem, on db: Database) async throws {}
+}
+
 private struct MockBrokenItemRepository: BrokenItemRepository {
     func hasPositiveQuantity(itemID: UUID, on db: Database) async throws -> Bool { false }
+    func listWithItem(on db: Database) async throws -> [BrokenItem] { [] }
+    func listWithItem(responsibleUserID: UUID, on db: Database) async throws -> [BrokenItem] { [] }
     func save(_ brokenItem: BrokenItem, on db: Database) async throws {}
 }
 
 private struct MockItemCategoryRepository: ItemCategoryRepository {
     func list(on db: Database) async throws -> [ItemCategory] { [] }
+    func listWithItemCounts(on db: Database) async throws -> [ItemCategoryItemsCount] { [] }
     func exists(id: UUID, on db: Database) async throws -> Bool { false }
     func find(id: UUID, on db: Database) async throws -> ItemCategory? { nil }
     func save(_ category: ItemCategory, on db: Database) async throws {}

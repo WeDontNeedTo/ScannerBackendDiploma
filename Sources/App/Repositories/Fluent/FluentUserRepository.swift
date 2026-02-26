@@ -12,6 +12,18 @@ struct FluentUserRepository: UserRepository {
             .first()
     }
 
+    func list(page: Int, per: Int, on db: Database) async throws -> [User] {
+        let offset = (page - 1) * per
+        return try await User.query(on: db)
+            .sort(\.$fullName, .ascending)
+            .range(offset..<(offset + per))
+            .all()
+    }
+
+    func count(on db: Database) async throws -> Int {
+        try await User.query(on: db).count()
+    }
+
     func listMateriallyResponsible(on db: Database) async throws -> [User] {
         try await User.query(on: db)
             .filter(\.$role == .materiallyResponsiblePerson)

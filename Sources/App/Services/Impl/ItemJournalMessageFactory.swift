@@ -9,6 +9,8 @@ enum ItemJournalEventType {
     static let transferDirect = "transfer_direct"
     static let itemReturned = "item_returned"
     static let locationChanged = "location_changed"
+    static let locationRequestCreated = "location_request_created"
+    static let locationRequestApproved = "location_request_approved"
     static let responsibleChanged = "responsible_changed"
     static let movedToBroken = "moved_to_broken"
 }
@@ -52,6 +54,19 @@ enum ItemJournalMessageFactory {
 
     static func locationChanged(actor: String, itemLabel: String, locationName: String) -> String {
         "\(actor) переместил предмет \(itemLabel) в локацию \"\(locationName)\"."
+    }
+
+    static func locationRequestCreated(actor: String, itemLabel: String, locationName: String, target: String) -> String {
+        "\(actor) отправил запрос на перемещение предмета \(itemLabel) в локацию \"\(locationName)\" пользователю \(target)."
+    }
+
+    static func locationRequestApproved(
+        approver: String,
+        requester: String,
+        itemLabel: String,
+        locationName: String
+    ) -> String {
+        "\(approver) одобрил запрос \(requester) на перемещение предмета \(itemLabel) в локацию \"\(locationName)\"."
     }
 
     static func responsibleChanged(actor: String, itemLabel: String, oldResponsible: String, newResponsible: String) -> String {
