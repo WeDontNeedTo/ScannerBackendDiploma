@@ -1,0 +1,98 @@
+digraph BPMN_Material_Assets_RU {
+  graph [
+    rankdir=LR,
+    splines=ortho,
+    bgcolor="white",
+    fontname="Arial",
+    nodesep=0.45,
+    ranksep=0.9,
+    pad=0.2,
+    size="16,9!"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#f9fafb",
+    color="#9ca3af",
+    fontname="Arial",
+    fontsize=10
+  ];
+
+  edge [
+    color="#374151",
+    penwidth=1.0,
+    fontname="Arial",
+    fontsize=9
+  ];
+
+  subgraph cluster_employee {
+    label="Сотрудник";
+    color="#d1d5db";
+    style="rounded";
+
+    e_start [shape=oval, label="Потребность\nв объекте", fillcolor="#ffffff"];
+    e_request_grab [label="Создать заявку\nна получение"];
+    e_use_item [label="Использовать объект"];
+    e_request_location [label="Запросить смену\nлокации"];
+    e_return [label="Оформить возврат"];
+    e_end [shape=oval, label="Завершение\nпроцесса", fillcolor="#ffffff"];
+  }
+
+  subgraph cluster_mrp {
+    label="Ответственное лицо (МОЛ)";
+    color="#d1d5db";
+    style="rounded";
+
+    m_review_grab [label="Проверить заявку\nна получение"];
+    m_grab_decision [shape=diamond, label="Одобрить?"];
+    m_issue_item [label="Передать объект"];
+    m_reject [label="Отклонить заявку"];
+
+    m_review_location [label="Проверить заявку\nна смену локации"];
+    m_location_decision [shape=diamond, label="Одобрить?"];
+    m_change_location [label="Изменить локацию\nобъекта"];
+
+    m_accept_return [label="Принять возврат"];
+    m_mark_written_off [label="Оформить списание\nповрежденного объекта"];
+    m_inventory [label="Провести\nинвентаризацию"];
+  }
+
+  subgraph cluster_accountant_admin {
+    label="Бухгалтер / Администратор";
+    color="#d1d5db";
+    style="rounded";
+
+    a_start_inventory [label="Запустить\nинвентаризацию"];
+    a_review_inventory [label="Проверить итоги\nинвентаризации"];
+    a_reassign [label="Переназначить\nответственное лицо\n(при необходимости)"];
+    a_finalize [label="Утвердить результаты"];
+  }
+
+  e_start -> e_request_grab;
+  e_request_grab -> m_review_grab [style=dashed, label="заявка"];
+  m_review_grab -> m_grab_decision;
+  m_grab_decision -> m_issue_item [label="да"];
+  m_grab_decision -> m_reject [label="нет"];
+  m_issue_item -> e_use_item [style=dashed, label="объект передан"];
+  m_reject -> e_end [style=dashed, label="уведомление"];
+
+  e_use_item -> e_request_location;
+  e_request_location -> m_review_location [style=dashed, label="заявка"];
+  m_review_location -> m_location_decision;
+  m_location_decision -> m_change_location [label="да"];
+  m_location_decision -> m_reject [label="нет"];
+  m_change_location -> e_use_item [style=dashed, label="локация обновлена"];
+
+  e_use_item -> e_return;
+  e_return -> m_accept_return [style=dashed, label="возврат"];
+  m_accept_return -> e_end [style=dashed, label="подтверждение"];
+
+  e_use_item -> m_mark_written_off [style=dashed, label="поломка"];
+  m_mark_written_off -> a_finalize [style=dashed, label="акт списания"];
+
+  a_start_inventory -> m_inventory [style=dashed, label="задание"];
+  m_inventory -> a_review_inventory [style=dashed, label="результаты"];
+  a_review_inventory -> a_reassign;
+  a_reassign -> a_finalize;
+}

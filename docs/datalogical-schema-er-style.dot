@@ -1,0 +1,214 @@
+digraph DiplomaBackendER {
+  graph [rankdir=LR, splines=ortho, bgcolor="#ffffff", nodesep=0.22, ranksep=0.4, pad=0.18];
+  node [shape=plain, fontname="Helvetica", fontsize=7.5];
+  edge [color="#374151", penwidth=0.75, dir=both, arrowhead=dot, arrowtail=dot, arrowsize=0.34, style=solid, fontname="Helvetica", fontsize=7];
+
+  USERS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>users</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">login VARCHAR (UNIQUE)</TD></TR>
+      <TR><TD ALIGN="LEFT">password_hash VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">full_name VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">age INT</TD></TR>
+      <TR><TD ALIGN="LEFT">position VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">role VARCHAR</TD></TR>
+    </TABLE>
+  >];
+
+  USER_TOKENS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>user_tokens</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">value VARCHAR (UNIQUE)</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] user_id UUID (UNIQUE)</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">expires_at TIMESTAMP</TD></TR>
+    </TABLE>
+  >];
+
+  ITEM_CATEGORIES [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>item_categories</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">name VARCHAR (UNIQUE)</TD></TR>
+      <TR><TD ALIGN="LEFT">description VARCHAR NULL</TD></TR>
+    </TABLE>
+  >];
+
+  ITEMS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>items</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">number VARCHAR (UNIQUE)</TD></TR>
+      <TR><TD ALIGN="LEFT">name VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">description VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">price_rub NUMERIC(12,2) NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] category_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] responsible_user_id UUID NULL</TD></TR>
+    </TABLE>
+  >];
+
+  ITEM_PARAMETERS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>item_parameters</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">key VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">value VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">UNIQUE(item_id, key)</TD></TR>
+    </TABLE>
+  >];
+
+  LOCATIONS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>locations</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">name VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">kind VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">address VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">shelf VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">row VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">section VARCHAR NULL</TD></TR>
+    </TABLE>
+  >];
+
+  ITEM_LOCATIONS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>item_locations</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] location_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">UNIQUE(item_id, location_id)</TD></TR>
+    </TABLE>
+  >];
+
+  USER_ITEMS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>user_items</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] user_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID (UNIQUE)</TD></TR>
+      <TR><TD ALIGN="LEFT">status VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] approved_by_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] requested_to_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">grabbed_at TIMESTAMP</TD></TR>
+    </TABLE>
+  >];
+
+  BROKEN_ITEMS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>broken_items</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] location_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">quantity INT</TD></TR>
+      <TR><TD ALIGN="LEFT">reported_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">reason VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">notes VARCHAR NULL</TD></TR>
+    </TABLE>
+  >];
+
+  ITEM_LOCATION_REQUESTS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>item_location_requests</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] location_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] requester_user_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] requested_to_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] approved_by_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">status VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at TIMESTAMP</TD></TR>
+    </TABLE>
+  >];
+
+  ITEM_JOURNAL_EVENTS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>item_journal_events</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] actor_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">event_type VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">message VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+    </TABLE>
+  >];
+
+  INVENTORY_REQUESTS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>inventory_requests</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] requester_user_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] materially_responsible_user_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">inventory_date DATE</TD></TR>
+      <TR><TD ALIGN="LEFT">status VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">submitted_at TIMESTAMP NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">mrp_completed_at TIMESTAMP NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] mrp_completed_by_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">final_approved_at TIMESTAMP NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] final_approved_by_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at TIMESTAMP</TD></TR>
+    </TABLE>
+  >];
+
+  INVENTORY_REQUEST_ITEMS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>inventory_request_items</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] request_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] item_id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">item_number_snapshot VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">item_name_snapshot VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">status VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">scanned_at TIMESTAMP NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">[FK] scanned_by_user_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">scanned_item_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at TIMESTAMP</TD></TR>
+      <TR><TD ALIGN="LEFT">UNIQUE(request_id, item_id)</TD></TR>
+    </TABLE>
+  >];
+
+  AUDIT_LOGS [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" BGCOLOR="white">
+      <TR><TD BGCOLOR="#d7dde8"><FONT COLOR="#222831"><B>audit_logs</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">[PK] id UUID</TD></TR>
+      <TR><TD ALIGN="LEFT">action VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">entity VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">entity_id UUID NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">message VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">metadata VARCHAR NULL</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at TIMESTAMP</TD></TR>
+    </TABLE>
+  >];
+
+  USERS -> USER_TOKENS [xlabel="1:1"];
+  USERS -> ITEMS [xlabel="1:N"];
+  ITEM_CATEGORIES -> ITEMS [xlabel="1:N"];
+  ITEMS -> ITEM_PARAMETERS [xlabel="1:N"];
+  ITEMS -> ITEM_LOCATIONS [xlabel="1:N"];
+  LOCATIONS -> ITEM_LOCATIONS [xlabel="1:N"];
+  USERS -> USER_ITEMS [xlabel="1:N"];
+  ITEMS -> USER_ITEMS [xlabel="1:1"];
+  ITEMS -> BROKEN_ITEMS [xlabel="1:N"];
+  LOCATIONS -> BROKEN_ITEMS [xlabel="1:N"];
+  ITEMS -> ITEM_LOCATION_REQUESTS [xlabel="1:N"];
+  LOCATIONS -> ITEM_LOCATION_REQUESTS [xlabel="1:N"];
+  USERS -> ITEM_LOCATION_REQUESTS [xlabel="1:N"];
+  ITEMS -> ITEM_JOURNAL_EVENTS [xlabel="1:N"];
+  USERS -> ITEM_JOURNAL_EVENTS [xlabel="1:N"];
+  USERS -> INVENTORY_REQUESTS [xlabel="1:N"];
+  INVENTORY_REQUESTS -> INVENTORY_REQUEST_ITEMS [xlabel="1:N"];
+  ITEMS -> INVENTORY_REQUEST_ITEMS [xlabel="1:N"];
+
+  {rank=same; USERS; USER_TOKENS; AUDIT_LOGS;}
+  {rank=same; ITEM_CATEGORIES; ITEMS; ITEM_PARAMETERS;}
+  {rank=same; LOCATIONS; ITEM_LOCATIONS; BROKEN_ITEMS;}
+  {rank=same; USER_ITEMS; ITEM_LOCATION_REQUESTS; ITEM_JOURNAL_EVENTS;}
+  {rank=same; INVENTORY_REQUESTS; INVENTORY_REQUEST_ITEMS;}
+}

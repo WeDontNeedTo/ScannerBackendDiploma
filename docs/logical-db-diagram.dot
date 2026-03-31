@@ -1,0 +1,55 @@
+digraph LogicalDB {
+  graph [rankdir=TB, bgcolor="#ffffff", splines=ortho, nodesep=0.5, ranksep=0.55, pad=0.3];
+  node [shape=box, style="rounded,filled", fillcolor="#f4b66d", color="#1f2937", fontname="Arial", fontsize=10];
+  edge [color="#374151", arrowsize=0.7, penwidth=1.1, fontname="Arial", fontsize=9];
+
+  USERS [label="ПОЛЬЗОВАТЕЛИ\n- ID (PK)\n- Логин\n- Хеш пароля\n- ФИО\n- Возраст\n- Должность\n- Роль"];
+  USER_TOKENS [label="ТОКЕНЫ ПОЛЬЗОВАТЕЛЕЙ\n- ID (PK)\n- Значение\n- ID пользователя (FK)\n- Дата создания\n- Истекает"];
+
+  ITEMS [label="ОБЪЕКТЫ УЧЕТА\n- ID (PK)\n- Номер\n- Наименование\n- Описание\n- Цена (RUB)\n- ID категории (FK)\n- ID ответственного (FK)"];
+  ITEM_CATEGORIES [label="КАТЕГОРИИ ОБЪЕКТОВ\n- ID (PK)\n- Наименование\n- Описание"];
+  ITEM_PARAMETERS [label="ПАРАМЕТРЫ ОБЪЕКТА\n- ID (PK)\n- ID объекта (FK)\n- Ключ\n- Значение"];
+
+  LOCATIONS [label="ЛОКАЦИИ\n- ID (PK)\n- Наименование\n- Тип\n- Адрес\n- Стеллаж\n- Ряд\n- Секция"];
+  ITEM_LOCATIONS [label="ТЕКУЩИЕ ЛОКАЦИИ ОБЪЕКТОВ\n- ID (PK)\n- ID объекта (FK)\n- ID локации (FK)\n- Дата создания\n- Дата обновления"];
+  BROKEN_ITEMS [label="СПИСАННЫЕ ОБЪЕКТЫ\n- ID (PK)\n- ID объекта (FK)\n- ID локации (FK)\n- Количество\n- Дата фиксации\n- Причина\n- Примечание"];
+
+  USER_ITEMS [label="ВЫДАЧА ОБЪЕКТОВ\n- ID (PK)\n- ID пользователя (FK)\n- ID объекта (FK)\n- Статус\n- ID согласовавшего\n- ID запрошенного согласующего\n- Дата выдачи"];
+  ITEM_LOCATION_REQUESTS [label="ЗАЯВКИ НА СМЕНУ ЛОКАЦИИ\n- ID (PK)\n- ID объекта (FK)\n- ID локации (FK)\n- ID инициатора (FK)\n- ID согласующего\n- ID утвердившего\n- Статус\n- Дата создания\n- Дата обновления"];
+
+  INVENTORY_REQUESTS [label="ЗАЯВКИ НА ИНВЕНТАРИЗАЦИЮ\n- ID (PK)\n- ID инициатора (FK)\n- ID ответственного лица (FK)\n- Дата инвентаризации\n- Статус\n- Дата отправки\n- Дата завершения ответственным лицом\n- ID завершившего ответственного лица\n- Дата финального согласования\n- ID финально согласовавшего\n- Дата создания\n- Дата обновления"];
+  INVENTORY_REQUEST_ITEMS [label="ПОЗИЦИИ ИНВЕНТАРИЗАЦИИ\n- ID (PK)\n- ID заявки (FK)\n- ID объекта (FK)\n- Номер объекта (снимок)\n- Наименование объекта (снимок)\n- Статус\n- Дата сканирования\n- ID сканировавшего\n- ID отсканированного объекта\n- Дата создания\n- Дата обновления"];
+
+  ITEM_JOURNAL_EVENTS [label="ЖУРНАЛ СОБЫТИЙ ОБЪЕКТА\n- ID (PK)\n- ID объекта (FK)\n- ID исполнителя (FK)\n- Тип события\n- Сообщение\n- Дата создания"];
+  AUDIT_LOGS [label="АУДИТ-ЛОГИ\n- ID (PK)\n- Действие\n- Сущность\n- ID сущности\n- Сообщение\n- Метаданные\n- Дата создания"];
+
+  USERS -> USER_TOKENS [xlabel="1:1"];
+  USERS -> ITEMS [xlabel="1 : ∞"];
+  ITEM_CATEGORIES -> ITEMS [xlabel="1 : ∞"];
+
+  ITEMS -> ITEM_PARAMETERS [xlabel="1 : ∞"];
+  ITEMS -> ITEM_LOCATIONS [xlabel="1 : ∞"];
+  LOCATIONS -> ITEM_LOCATIONS [xlabel="1 : ∞"];
+
+  USERS -> USER_ITEMS [xlabel="1 : ∞"];
+  ITEMS -> USER_ITEMS [xlabel="1:1"];
+
+  ITEMS -> BROKEN_ITEMS [xlabel="1 : ∞"];
+  LOCATIONS -> BROKEN_ITEMS [xlabel="1 : ∞"];
+
+  ITEMS -> ITEM_LOCATION_REQUESTS [xlabel="1 : ∞"];
+  LOCATIONS -> ITEM_LOCATION_REQUESTS [xlabel="1 : ∞"];
+  USERS -> ITEM_LOCATION_REQUESTS [xlabel="1 : ∞"];
+
+  ITEMS -> ITEM_JOURNAL_EVENTS [xlabel="1 : ∞"];
+  USERS -> ITEM_JOURNAL_EVENTS [xlabel="1 : ∞"];
+
+  USERS -> INVENTORY_REQUESTS [xlabel="1 : ∞"];
+  INVENTORY_REQUESTS -> INVENTORY_REQUEST_ITEMS [xlabel="1 : ∞"];
+  ITEMS -> INVENTORY_REQUEST_ITEMS [xlabel="1 : ∞"];
+
+  {rank=same; USERS; USER_TOKENS; ITEM_CATEGORIES; AUDIT_LOGS;}
+  {rank=same; ITEMS; ITEM_PARAMETERS; LOCATIONS; ITEM_JOURNAL_EVENTS;}
+  {rank=same; USER_ITEMS; ITEM_LOCATIONS; BROKEN_ITEMS; ITEM_LOCATION_REQUESTS;}
+  {rank=same; INVENTORY_REQUESTS; INVENTORY_REQUEST_ITEMS;}
+}

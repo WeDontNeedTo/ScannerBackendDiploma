@@ -1,0 +1,56 @@
+digraph DiplomaBackendDatalogical {
+  graph [rankdir=LR, bgcolor="#f7f8fa", splines=ortho, nodesep=0.7, ranksep=1.0, pad=0.3];
+  node [shape=box, style="rounded,filled", fillcolor="#e9edf5", color="#374151", fontname="Arial", fontsize=10];
+  edge [color="#4b5563", arrowsize=0.7, penwidth=1.1, fontname="Arial", fontsize=9];
+
+  USERS [label="users\n- id UUID (PK)\n- login VARCHAR (UNIQUE)\n- password_hash VARCHAR\n- full_name VARCHAR\n- age INT\n- position VARCHAR\n- role VARCHAR"];
+  USER_TOKENS [label="user_tokens\n- id UUID (PK)\n- value VARCHAR (UNIQUE)\n- user_id UUID (FK, UNIQUE)\n- created_at TIMESTAMP\n- expires_at TIMESTAMP"];
+
+  ITEM_CATEGORIES [label="item_categories\n- id UUID (PK)\n- name VARCHAR (UNIQUE)\n- description VARCHAR NULL"];
+  ITEMS [label="items\n- id UUID (PK)\n- number VARCHAR (UNIQUE)\n- name VARCHAR\n- description VARCHAR NULL\n- price_rub NUMERIC(12,2) NULL\n- category_id UUID (FK) NULL\n- responsible_user_id UUID (FK) NULL"];
+  ITEM_PARAMETERS [label="item_parameters\n- id UUID (PK)\n- item_id UUID (FK)\n- key VARCHAR\n- value VARCHAR\n- UNIQUE(item_id, key)"];
+
+  LOCATIONS [label="locations\n- id UUID (PK)\n- name VARCHAR\n- kind VARCHAR\n- address VARCHAR NULL\n- shelf VARCHAR NULL\n- row VARCHAR NULL\n- section VARCHAR NULL"];
+  ITEM_LOCATIONS [label="item_locations\n- id UUID (PK)\n- item_id UUID (FK)\n- location_id UUID (FK)\n- created_at TIMESTAMP\n- updated_at TIMESTAMP\n- UNIQUE(item_id, location_id)"];
+
+  USER_ITEMS [label="user_items\n- id UUID (PK)\n- user_id UUID (FK)\n- item_id UUID (FK, UNIQUE)\n- status VARCHAR\n- approved_by_user_id UUID (FK) NULL\n- requested_to_user_id UUID (FK) NULL\n- grabbed_at TIMESTAMP"];
+
+  BROKEN_ITEMS [label="broken_items\n- id UUID (PK)\n- item_id UUID (FK)\n- location_id UUID (FK)\n- quantity INT\n- reported_at TIMESTAMP\n- reason VARCHAR NULL\n- notes VARCHAR NULL"];
+
+  ITEM_LOCATION_REQUESTS [label="item_location_requests\n- id UUID (PK)\n- item_id UUID (FK)\n- location_id UUID (FK)\n- requester_user_id UUID (FK)\n- requested_to_user_id UUID (FK) NULL\n- approved_by_user_id UUID (FK) NULL\n- status VARCHAR\n- created_at TIMESTAMP\n- updated_at TIMESTAMP"];
+
+  ITEM_JOURNAL_EVENTS [label="item_journal_events\n- id UUID (PK)\n- item_id UUID (FK)\n- actor_user_id UUID (FK) NULL\n- event_type VARCHAR\n- message VARCHAR\n- created_at TIMESTAMP"];
+
+  INVENTORY_REQUESTS [label="inventory_requests\n- id UUID (PK)\n- requester_user_id UUID (FK)\n- materially_responsible_user_id UUID (FK)\n- inventory_date DATE\n- status VARCHAR\n- submitted_at TIMESTAMP NULL\n- mrp_completed_at TIMESTAMP NULL\n- mrp_completed_by_user_id UUID (FK) NULL\n- final_approved_at TIMESTAMP NULL\n- final_approved_by_user_id UUID (FK) NULL\n- created_at TIMESTAMP\n- updated_at TIMESTAMP"];
+
+  INVENTORY_REQUEST_ITEMS [label="inventory_request_items\n- id UUID (PK)\n- request_id UUID (FK)\n- item_id UUID (FK)\n- item_number_snapshot VARCHAR\n- item_name_snapshot VARCHAR\n- status VARCHAR\n- scanned_at TIMESTAMP NULL\n- scanned_by_user_id UUID (FK) NULL\n- scanned_item_id UUID NULL\n- created_at TIMESTAMP\n- updated_at TIMESTAMP\n- UNIQUE(request_id, item_id)"];
+
+  AUDIT_LOGS [label="audit_logs\n- id UUID (PK)\n- action VARCHAR\n- entity VARCHAR\n- entity_id UUID NULL\n- message VARCHAR NULL\n- metadata VARCHAR NULL\n- created_at TIMESTAMP"];
+
+  USERS -> USER_TOKENS [xlabel="1:1"];
+
+  USERS -> ITEMS [xlabel="1:N"];
+  ITEM_CATEGORIES -> ITEMS [xlabel="1:N"];
+
+  ITEMS -> ITEM_PARAMETERS [xlabel="1:N"];
+
+  ITEMS -> ITEM_LOCATIONS [xlabel="1:N"];
+  LOCATIONS -> ITEM_LOCATIONS [xlabel="1:N"];
+
+  USERS -> USER_ITEMS [xlabel="1:N"];
+  ITEMS -> USER_ITEMS [xlabel="1:1"];
+
+  ITEMS -> BROKEN_ITEMS [xlabel="1:N"];
+  LOCATIONS -> BROKEN_ITEMS [xlabel="1:N"];
+
+  ITEMS -> ITEM_LOCATION_REQUESTS [xlabel="1:N"];
+  LOCATIONS -> ITEM_LOCATION_REQUESTS [xlabel="1:N"];
+  USERS -> ITEM_LOCATION_REQUESTS [xlabel="1:N"];
+
+  ITEMS -> ITEM_JOURNAL_EVENTS [xlabel="1:N"];
+  USERS -> ITEM_JOURNAL_EVENTS [xlabel="1:N"];
+
+  USERS -> INVENTORY_REQUESTS [xlabel="1:N"];
+  INVENTORY_REQUESTS -> INVENTORY_REQUEST_ITEMS [xlabel="1:N"];
+  ITEMS -> INVENTORY_REQUEST_ITEMS [xlabel="1:N"];
+}

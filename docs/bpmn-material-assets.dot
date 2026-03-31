@@ -1,0 +1,131 @@
+digraph BPMN_Material_Assets {
+  graph [
+    rankdir=LR,
+    splines=ortho,
+    fontname="Helvetica",
+    bgcolor="white",
+    nodesep=0.35,
+    ranksep=0.7
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#f8f9fb",
+    color="#9ca3af",
+    fontname="Helvetica",
+    fontsize=10
+  ];
+
+  edge [
+    color="#4b5563",
+    penwidth=1.0,
+    fontname="Helvetica",
+    fontsize=9
+  ];
+
+  subgraph cluster_employee {
+    label="Employee";
+    color="#d1d5db";
+    style="rounded";
+    E1 [shape=oval, label="Start", fillcolor="#ffffff"];
+    E2 [label="Login"];
+    E3 [label="Create grab request"];
+    E4 [label="Create location change request"];
+    E5 [label="Return grabbed item"];
+  }
+
+  subgraph cluster_mrp {
+    label="Materially Responsible Person";
+    color="#d1d5db";
+    style="rounded";
+    M1 [label="Review incoming requests"];
+    M2 [shape=diamond, label="Approve request?"];
+    M3 [label="Approve grab / transfer"];
+    M4 [label="Approve location request"];
+    M5 [label="Reject request"];
+    M6 [label="Move item to broken"];
+    M7 [label="Perform inventory scan"];
+    M8 [label="Complete inventory"];
+  }
+
+  subgraph cluster_accountant {
+    label="Accountant / Admin";
+    color="#d1d5db";
+    style="rounded";
+    A1 [label="Create inventory draft"];
+    A2 [label="Select items and MRP"];
+    A3 [label="Submit inventory"];
+    A4 [label="Final approve inventory"];
+    A5 [label="Direct approve transfer/location"];
+    A6 [label="Manage users, roles, assignments"];
+  }
+
+  subgraph cluster_backend {
+    label="Backend System";
+    color="#d1d5db";
+    style="rounded";
+    S1 [shape=cylinder, label="users, user_tokens"];
+    S2 [shape=cylinder, label="items, item_locations,\nitem_parameters"];
+    S3 [shape=cylinder, label="user_items"];
+    S4 [shape=cylinder, label="item_location_requests"];
+    S5 [shape=cylinder, label="broken_items"];
+    S6 [shape=cylinder, label="inventory_requests,\ninventory_request_items"];
+    S7 [shape=cylinder, label="item_journal_events"];
+    S8 [shape=cylinder, label="audit_logs"];
+    S9 [shape=oval, label="End", fillcolor="#ffffff"];
+  }
+
+  E1 -> E2;
+  E2 -> E3;
+  E2 -> E4;
+  E2 -> E5;
+
+  E3 -> S3;
+  S3 -> M1;
+  M1 -> M2;
+  M2 -> M3 [label="Yes"];
+  M2 -> M5 [label="No"];
+  M3 -> S3;
+  M3 -> S7;
+  M3 -> S8;
+
+  E4 -> S4;
+  S4 -> M1;
+  M2 -> M4 [label="Yes"];
+  M4 -> S2;
+  M4 -> S4;
+  M4 -> S7;
+  M4 -> S8;
+
+  E5 -> S3;
+  E5 -> S7;
+  E5 -> S8;
+
+  M6 -> S5;
+  M6 -> S7;
+  M6 -> S8;
+
+  A1 -> A2;
+  A2 -> A3;
+  A3 -> S6;
+  S6 -> M7;
+  M7 -> S6;
+  M7 -> M8;
+  M8 -> S6;
+  M8 -> A4;
+  A4 -> S6;
+  A4 -> S8;
+
+  A5 -> S3;
+  A5 -> S2;
+  A5 -> S7;
+  A5 -> S8;
+
+  A6 -> S1;
+  A6 -> S2;
+  A6 -> S8;
+
+  M5 -> S8;
+  S8 -> S9;
+}
