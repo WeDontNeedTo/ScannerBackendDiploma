@@ -83,7 +83,6 @@ public func configure(_ app: Application) throws {
     app.migrations.add(AddUserItemRequestWorkflow())
     app.migrations.add(AddUserItemRequestedToUserField())
     app.migrations.add(CreateItemLocation())
-    app.migrations.add(AddItemLocationTimestamps())
     app.migrations.add(RemoveItemLocationQuantity())
     app.migrations.add(CreateItemLocationRequest())
     app.migrations.add(CreateInventoryRequest())
