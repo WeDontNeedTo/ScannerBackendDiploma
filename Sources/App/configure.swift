@@ -5,7 +5,8 @@ import Vapor
 
 public func configure(_ app: Application) throws {
     if let databaseURL = Environment.get("DATABASE_URL"),
-       var postgresConfig = try? SQLPostgresConfiguration(url: databaseURL) {
+        var postgresConfig = try? SQLPostgresConfiguration(url: databaseURL)
+    {
         app.databases.use(.postgres(configuration: postgresConfig), as: .psql)
     } else {
         app.databases.use(
@@ -42,7 +43,8 @@ public func configure(_ app: Application) throws {
     let itemJournalService = DefaultItemJournalService(repositories: app.repositories)
     app.services = ServiceContainer(
         dashboardService: DefaultDashboardService(repositories: app.repositories),
-        itemService: DefaultItemService(repositories: app.repositories, itemJournalService: itemJournalService),
+        itemService: DefaultItemService(
+            repositories: app.repositories, itemJournalService: itemJournalService),
         itemLocationRequestService: DefaultItemLocationRequestService(
             repositories: app.repositories,
             itemJournalService: itemJournalService
@@ -78,7 +80,6 @@ public func configure(_ app: Application) throws {
     app.migrations.add(AddUserRoleField())
     app.migrations.add(CreateUserToken())
     app.migrations.add(CreateUserItem())
-    app.migrations.add(RemoveUserItemQuantity())
     app.migrations.add(AddUserItemRequestWorkflow())
     app.migrations.add(AddUserItemRequestedToUserField())
     app.migrations.add(CreateItemLocation())
